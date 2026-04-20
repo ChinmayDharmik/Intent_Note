@@ -1,0 +1,52 @@
+{
+    "manifest_version": 3,
+    "name": "Intent",
+    "version": "1.0.0",
+    "description": "Captures what you save and why. Automatically.",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "tabs"
+    ],
+    "host_permissions": [
+        "<all_urls>",
+        "http://localhost:1234/*",
+        "https://api.anthropic.com/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "background": {
+        "service_worker": "src/background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "src/content.js"
+            ]
+        }
+    ],
+    "options_page": "settings.html",
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://localhost:1234 https://api.anthropic.com https://fonts.googleapis.com https://fonts.gstatic.com"
+    },
+    "commands": {
+        "save-selection": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+S",
+                "mac": "Command+Shift+S"
+            },
+            "description": "Save current selection or page"
+        }
+    }
+}

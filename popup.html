@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="src/popup.css" />
+</head>
+
+<body>
+    <div class="shell">
+
+        <header class="header">
+            <div class="brand">
+                <span class="brand-mark">◆</span>
+                <span class="brand-name">Intent</span>
+            </div>
+            <div class="header-actions">
+                <span class="capture-count" id="captureCount">0 saved</span>
+                <div class="export-wrap">
+                    <button class="icon-btn" id="exportBtn" title="Export captures">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M7 1v8M4 6l3 3 3-3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="export-menu hidden" id="exportMenu">
+                        <button class="export-option" data-format="json">JSON</button>
+                        <button class="export-option" data-format="markdown">Markdown</button>
+                    </div>
+                </div>
+                <button class="icon-btn" id="settingsBtn" title="Settings">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2" />
+                        <path
+                            d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.8 2.8l1.06 1.06M10.14 10.14l1.06 1.06M2.8 11.2l1.06-1.06M10.14 3.86l1.06-1.06"
+                            stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Error Banner: shows LLM/API errors visibly in the popup -->
+        <div class="error-banner hidden" id="errorBanner"></div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search captures…" autocomplete="off" spellcheck="false" />
+        </div>
+
+        <div class="capture-bar">
+            <input type="text" id="quickInput" class="quick-input" placeholder="Drop a thought…" autocomplete="off"
+                spellcheck="false" />
+            <button class="page-toggle active" id="attachPageBtn">+ link</button>
+            <button class="save-btn" id="saveQuickBtn" title="Save (Enter)">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M2 6.5h9M7.5 3L11 6.5 7.5 10" stroke="currentColor" stroke-width="1.4"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+
+        <nav class="tabs" id="tabs">
+            <button class="tab active" data-filter="all">All</button>
+            <button class="tab" data-filter="book" title="Book">📚</button>
+            <button class="tab" data-filter="movie" title="Movie">🎬</button>
+            <button class="tab" data-filter="article" title="Article">📰</button>
+            <button class="tab" data-filter="idea" title="Idea">💡</button>
+            <button class="tab" data-filter="quote" title="Quote">💬</button>
+            <button class="tab" data-filter="product" title="Product">🛍️</button>
+            <button class="tab" data-filter="recipe" title="Recipe">🍳</button>
+        </nav>
+
+        <main class="feed" id="feed"></main>
+
+        <div class="empty hidden" id="empty">
+            <div class="empty-icon">◆</div>
+            <p class="empty-title">Nothing saved yet</p>
+            <p class="empty-sub">Type a thought above, or highlight text on any page and press <kbd>Ctrl+Shift+S</kbd>
+            </p>
+        </div>
+
+    </div>
+    <script src="src/popup.js"></script>
+</body>
+
+</html>
