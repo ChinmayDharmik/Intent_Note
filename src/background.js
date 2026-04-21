@@ -57,6 +57,68 @@ async function clearAllCaptures() {
   await chrome.storage.local.set({ captures: [] });
 }
 
+// ─── Supabase Sync ─────────────────────────────────────────────────────────────
+
+async function syncToSupabase(capture) {
+  const settings = await loadSettings();
+  if (!settings.supabaseUrl || !settings.supabaseAnonKey) return;
+
+  const endpoint = settings.supabaseUrl.replace(/\/$/, "") + "/rest/v1/captures";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": settings.supabaseAnonKey,
+      "Authorization": `Bearer ${settings.supabaseAnonKey}`,
+      "Prefer": "resolution=merge-duplicates",
+    },
+    body: JSON.stringify({
+      id:         capture.id,
+      intent:     capture.intent,
+      title:      capture.title,
+      reason:     capture.reason,
+      extract:    capture.extract,
+      raw_text:   capture.rawText,
+      url:        capture.url,
+      page_title: capture.pageTitle,
+      saved_at:   capture.savedAt,
+      deleted_at: null,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase ${res.status}: ${text.slice(0, 100)}`);
+  }
+}
+
+async function softDeleteInSupabase(id) {
+  const settings = await loadSettings();
+  if (!settings.supabaseUrl || !settings.supabaseAnonKey) return;
+
+  const endpoint = `${settings.supabaseUrl.replace(/\/$/, "")}/rest/v1/captures?id=eq.${encodeURIComponent(id)}`;
+
+  const res = await fetch(endpoint, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": settings.supabaseAnonKey,
+      "Authorization": `Bearer ${settings.supabaseAnonKey}`,
+    },
+    body: JSON.stringify({ deleted_at: new Date().toISOString() }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase soft-delete ${res.status}: ${text.slice(0, 100)}`);
+  }
+}
+
+async function setSyncStatus(status) {
+  await chrome.storage.local.set({ syncStatus: status });
+}
+
 // ─── Core: Capture Flow ────────────────────────────────────────────────────────
 
 /**
@@ -98,6 +160,15 @@ async function handleSave(payload, sendResponse) {
 
     await saveCapture(capture);
 
+    // Async Supabase sync — does not block capture or toast
+    setSyncStatus("syncing").catch(() => {});
+    syncToSupabase(capture)
+      .then(() => setSyncStatus("synced"))
+      .catch((err) => {
+        console.warn("[Intent] Supabase sync failed:", err.message);
+        setSyncStatus("error");
+      });
+
     // Notify content script to show success toast
     if (tab?.id) {
       chrome.tabs.sendMessage(tab.id, {
@@ -136,9 +207,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return true;
 
     case "DELETE_CAPTURE":
-      deleteCapture(message.payload.id).then(() =>
-        sendResponse({ success: true })
-      );
+      deleteCapture(message.payload.id).then(() => {
+        softDeleteInSupabase(message.payload.id).catch((err) =>
+          console.warn("[Intent] Supabase soft-delete failed:", err.message)
+        );
+        sendResponse({ success: true });
+      });
       return true;
 
     case "CLEAR_ALL":

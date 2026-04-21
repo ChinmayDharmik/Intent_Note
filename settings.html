@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Intent — Settings</title>
+    <link rel="stylesheet" href="src/fonts.css" />
     <link rel="stylesheet" href="src/settings.css" />
 </head>
 
@@ -74,6 +75,29 @@
                 </div>
             </section>
 
+            <!-- Supabase Sync -->
+            <section class="section" id="supabaseSection">
+                <label class="section-label">Sync</label>
+
+                <div class="field">
+                    <label class="field-label" for="supabaseUrl">Project URL</label>
+                    <input type="text" id="supabaseUrl" class="input" placeholder="https://xxxx.supabase.co"
+                        spellcheck="false" />
+                    <p class="field-hint">Settings → API in your Supabase project dashboard. Leave blank to disable
+                        sync.</p>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="supabaseAnonKey">Anon Key</label>
+                    <div class="input-row">
+                        <input type="password" id="supabaseAnonKey" class="input" placeholder="eyJ…"
+                            spellcheck="false" autocomplete="off" />
+                        <button class="icon-btn" id="toggleSupabaseKeyVisibility" title="Show / hide key">👁</button>
+                    </div>
+                    <p class="field-hint">Use the public anon key — never the service role key.</p>
+                </div>
+            </section>
+
             <!-- Status -->
             <div class="status hidden" id="status"></div>
 
@@ -88,6 +112,15 @@
     </div>
 
     <script src="src/settings.js"></script>
+    <script>
+      document.addEventListener("mousemove", function(e) {
+        var btn = e.target.closest && e.target.closest(".toggle-btn");
+        if (!btn) return;
+        var r = btn.getBoundingClientRect();
+        btn.style.setProperty("--glow-x", ((e.clientX - r.left) / r.width * 100) + "%");
+        btn.style.setProperty("--glow-y", ((e.clientY - r.top) / r.height * 100) + "%");
+      });
+    </script>
 </body>
 
 </html>

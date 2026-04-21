@@ -11,6 +11,8 @@ const DEFAULTS = {
   lmstudioBaseUrl: "http://localhost:1234/v1",
   lmstudioModel: "local-model",
   anthropicApiKey: "",
+  supabaseUrl: "",
+  supabaseAnonKey: "",
 };
 
 // ─── Elements ──────────────────────────────────────────────────────────────────
@@ -22,6 +24,9 @@ const lmBaseUrlInput   = document.getElementById("lmstudioBaseUrl");
 const lmModelInput     = document.getElementById("lmstudioModel");
 const apiKeyInput      = document.getElementById("anthropicApiKey");
 const toggleKeyBtn     = document.getElementById("toggleKeyVisibility");
+const supabaseUrlInput     = document.getElementById("supabaseUrl");
+const supabaseAnonKeyInput = document.getElementById("supabaseAnonKey");
+const toggleSupabaseKeyBtn = document.getElementById("toggleSupabaseKeyVisibility");
 const saveBtn          = document.getElementById("saveBtn");
 const testBtn          = document.getElementById("testBtn");
 const statusEl         = document.getElementById("status");
@@ -35,10 +40,12 @@ async function init() {
     const result = await chrome.storage.sync.get(STORAGE_KEY);
     const s = result[STORAGE_KEY] || DEFAULTS;
 
-    currentProvider          = s.provider        || DEFAULTS.provider;
-    lmBaseUrlInput.value     = s.lmstudioBaseUrl  || DEFAULTS.lmstudioBaseUrl;
-    lmModelInput.value       = s.lmstudioModel    || DEFAULTS.lmstudioModel;
-    apiKeyInput.value        = s.anthropicApiKey  || "";
+    currentProvider              = s.provider        || DEFAULTS.provider;
+    lmBaseUrlInput.value         = s.lmstudioBaseUrl  || DEFAULTS.lmstudioBaseUrl;
+    lmModelInput.value           = s.lmstudioModel    || DEFAULTS.lmstudioModel;
+    apiKeyInput.value            = s.anthropicApiKey  || "";
+    supabaseUrlInput.value       = s.supabaseUrl      || "";
+    supabaseAnonKeyInput.value   = s.supabaseAnonKey  || "";
 
     setProvider(currentProvider);
   } catch (err) {
@@ -76,6 +83,12 @@ toggleKeyBtn.addEventListener("click", () => {
   const isPassword = apiKeyInput.type === "password";
   apiKeyInput.type = isPassword ? "text" : "password";
   toggleKeyBtn.textContent = isPassword ? "🙈" : "👁";
+});
+
+toggleSupabaseKeyBtn.addEventListener("click", () => {
+  const isPassword = supabaseAnonKeyInput.type === "password";
+  supabaseAnonKeyInput.type = isPassword ? "text" : "password";
+  toggleSupabaseKeyBtn.textContent = isPassword ? "🙈" : "👁";
 });
 
 // ─── Save ──────────────────────────────────────────────────────────────────────
@@ -161,6 +174,8 @@ function buildSettings() {
     lmstudioBaseUrl: lmBaseUrlInput.value.trim() || DEFAULTS.lmstudioBaseUrl,
     lmstudioModel:   lmModelInput.value.trim()   || DEFAULTS.lmstudioModel,
     anthropicApiKey: apiKeyInput.value.trim(),
+    supabaseUrl:     supabaseUrlInput.value.trim(),
+    supabaseAnonKey: supabaseAnonKeyInput.value.trim(),
   };
 }
 

@@ -19,11 +19,22 @@ const attachPageBtn = document.getElementById("attachPageBtn");
 const settingsBtn   = document.getElementById("settingsBtn");
 const tabs         = document.getElementById("tabs");
 const errorBanner  = document.getElementById("errorBanner");
-const searchInput = document.getElementById("searchInput");
+const searchInput  = document.getElementById("searchInput");
+const syncDot      = document.getElementById("syncDot");
 let searchQuery = "";
 let attachPage  = true;
 
 // ─── Error Display ─────────────────────────────────────────────────────────────
+
+function updateSyncDot(status) {
+  syncDot.className = "sync-dot" + (status ? ` ${status}` : "");
+  const labels = { syncing: "Syncing…", synced: "Synced", error: "Sync error" };
+  syncDot.title = labels[status] || "Sync not configured";
+}
+
+chrome.storage.local.onChanged.addListener((changes) => {
+  if (changes.syncStatus) updateSyncDot(changes.syncStatus.newValue);
+});
 
 function showError(msg) {
   errorBanner.textContent = "⚠ " + msg;
@@ -66,6 +77,9 @@ async function init() {
     }
 
     render();
+
+    const syncRes = await chrome.storage.local.get("syncStatus");
+    updateSyncDot(syncRes?.syncStatus || null);
   } catch (err) {
     showError("Startup error: " + err.message);
   }
