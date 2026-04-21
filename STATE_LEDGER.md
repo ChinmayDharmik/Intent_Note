@@ -1,6 +1,16 @@
 # State Ledger
 **Project:** Intent
-**Last Updated:** 2026-04-18
+**Last Updated:** 2026-04-21
+
+---
+
+## 0. ACTIVE TASK
+
+| ID | Task | Started |
+|----|------|---------|
+| V2-PHASE-1 | Visual Sanctuary — migrate extension UI to v2 design system (warm palette, Noto Serif + Manrope, no-line borders, Mica blur, radial glow hover) | 2026-04-21 |
+
+**Files in scope:** `src/popup.css`, `src/settings.css`, `popup.html`, `settings.html`
 
 ---
 
@@ -31,8 +41,11 @@
 
 ## 3. NEXT IN QUEUE
 
-| ID | Task |
-|----|------|
+| ID | Task | Depends On |
+|----|------|-----------|
+| V2-PHASE-2 | Supabase Sync — offline-first upsert from background.js, Supabase settings fields, sync-status indicator, manifest host_permissions | V2-PHASE-1 |
+| V2-PHASE-3 | Companion Web App (`/web`) — Vite + vanilla JS, Supabase feed, asymmetric grid, detail view with lazy distillation | V2-PHASE-2 |
+| V2-PHASE-4 | Research Mode — Obsidian-compatible Markdown export with frontmatter + distillation bullets, bulk zip from web app | V2-PHASE-3 |
 
 ## 4. BLOCKED / PARKED
 
@@ -49,3 +62,9 @@
 - 2026-04-18 — Storage split confirmed: captures → chrome.storage.local, settings → chrome.storage.sync (key: "intentSettings"). llm.js must read sync, not local.
 - 2026-04-18 — No-selection shortcut behaviour: save page as article (pageTitle + URL as text). Not "select text first" toast. Matches actual implementation, PRD v1.1 updated to reflect.
 - 2026-04-18 — llm.js found to contain a copy of background.js. FIX-01 set as active task — this is the sole functional blocker.
+- 2026-04-21 — PRD v2.0 adopted. Project vision expanded to "Digital Sanctuary" — journaling/reflection system with dual-platform architecture.
+- 2026-04-21 — Sync backend: Supabase (Postgres + REST API). Extension uses plain fetch, no SDK, to avoid MV3 CSP issues.
+- 2026-04-21 — Both extension and web app adopt warm light theme (#fdf9f5 / #f7f3ef). DM Serif Display + DM Sans replaced by Noto Serif + Manrope.
+- 2026-04-21 — Distillation (US-12) is lazy: triggered on detail view open, not at capture time. Cached to Supabase after first call.
+- 2026-04-21 — Web app lives in /web (same repo). Stack: Vite + vanilla JS. Decide at Phase 3 start if complexity warrants React.
+- 2026-04-21 — Soft-delete strategy for Supabase: deleted captures get deleted_at timestamp, not hard-deleted. Confirm before Phase 2.

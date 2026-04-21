@@ -11,41 +11,37 @@ If `STATE_LEDGER.md` is missing or ACTIVE TASK is blank, refuse to operate. Dema
 
 ## PROJECT CONTEXT
 
-**What it does:** Chrome extension that captures why something mattered, not just what you saved.
+**What it does:** "Digital Sanctuary" — a Chrome extension + companion web app that captures why something mattered, not just what you saved. Premium editorial UI, cross-device sync via Supabase, and AI-powered distillation.
 
-**Stack:** JavaScript (vanilla ES modules) / Chrome Extension MV3 / chrome.storage.local / Vanilla HTML/CSS/JS
+**Stack:**
+- Extension: JavaScript (vanilla ES modules) / Chrome Extension MV3 / chrome.storage.local + Supabase REST / Vanilla HTML/CSS/JS
+- Web app (`/web`): Vite + vanilla JS / Supabase REST (no SDK)
 **Package manager:** npm
-**Test framework:** Manual (no automated test runner — load unpacked in Chrome)
+**Test framework:** Manual (no automated test runner — load unpacked in Chrome; web app via `vite dev`)
 **Lint / format:** eslint
-**Infra:** Chrome Extension (load unpacked, no build step)
+**Infra:** Extension (load unpacked, no build step) + Web app (Vite dev server, no deploy yet)
 
 **Key commands:**
 ```bash
-# Test (single, not full suite)
-# Load unpacked at chrome://extensions, open DevTools on background worker, trigger action manually
+# Extension: reload after changes
+# chrome://extensions → Reload
 
 # Lint
 npx eslint src/
 
-# Dev server
-# No dev server — reload extension at chrome://extensions after changes
-
-# Build
-# No build step — load unpacked directly from project root
+# Web app dev server (Phase 3+)
+cd web && npx vite
 ```
 
 **Constraints:**
-- No sync across devices (MVP)
-- No sharing or collaboration (MVP)
-- No search functionality (MVP)
-- No export (MVP)
+- No sharing or collaboration
 - No mobile app
-- No account or login
+- No account/login system (personal Supabase project = anon key only)
 - No editing of saved captures
 
 **Hardware:** Standard local machine; LM Studio optional for dev (runs mistral-7b-instruct or llama3-8b-instruct locally)
 
-**Architecture notes:** MV3 Chrome Extension with three components: Content Script (selection detection + toast), Background Service Worker (API orchestration, storage CRUD, shortcut handling), Popup + Settings UI. Single `llm.js` adapter abstracts Anthropic Messages API and LM Studio OpenAI-compatible endpoint — backend is a config value, not a code branch. `chrome.storage.local` only, no remote DB. Strict JSON LLM output with `max_tokens: 300`. Graceful fallback to intent `other` on JSON parse failure — no capture is ever silently lost.
+**Architecture notes:** Dual-platform system. Extension (Capture Layer): MV3 service worker orchestrates classification, local save, and async Supabase upsert — capture is never blocked by sync failure. Web app (Reflection Layer): reads from Supabase, renders asymmetric editorial feed, triggers lazy distillation on detail view open. Single `llm.js` adapter (one per platform) abstracts Anthropic and LM Studio. Strict JSON LLM output with `max_tokens: 300`. Fallback to `other` intent on JSON parse failure — no capture is ever silently lost. No Supabase SDK in extension — plain `fetch` to avoid MV3 CSP complications.
 
 ---
 
@@ -85,7 +81,7 @@ npx eslint src/
 
 ## EMERGENCY RECOVERY
 
-If session context is lost: demand `_STATE_LEDGER.md` contents before answering any technical question. Do not guess codebase state.
+If session context is lost: demand `STATE_LEDGER.md` contents before answering any technical question. Do not guess codebase state.
 
 ---
 
