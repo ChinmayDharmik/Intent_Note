@@ -1,6 +1,6 @@
 # State Ledger
 **Project:** Intent
-**Last Updated:** 2026-04-21 (DIST-02 complete)
+**Last Updated:** 2026-04-22 (FEAT-08 complete)
 
 ---
 
@@ -39,6 +39,10 @@
 | V2-PHASE-4 | Research Mode — Obsidian-compatible Markdown export with frontmatter + distillation bullets, bulk zip from web app | 2026-04-21 |
 | DIST-01 | Chrome Web Store prep — version 1.1.0, local font bundle (src/fonts/ + src/fonts.css), CDN removed from CSP, privacy-policy.html | 2026-04-21 |
 | DIST-02 | Store listing assets — store/promo-tile.svg, store/listing-copy.md (short/long desc, screenshot spec, metadata table) | 2026-04-21 |
+| FEAT-06 | Add Gemini Nano (Built-in AI, default) + Gemini Cloud providers; fallback chain Nano→Cloud; settings UI updated | 2026-04-21 |
+| FIX-04 | Selection pre-capture in content.js — fixes highlight lost before executeScript executes on shortcut | 2026-04-21 |
+| FEAT-07 | Free-form multi-tag support — LLM auto-suggests tags, user can add/remove inline, tag cloud filter bar above tabs | 2026-04-21 |
+| FEAT-08 | Editable captures — title, reason, intent, tags; Re-classify (reshuffle) button; extension popup inline form + web app detail edit mode | 2026-04-22 |
 
 ---
 
@@ -73,3 +77,4 @@
 - 2026-04-21 — Web app lives in /web (same repo). Stack: Vite + vanilla JS. Revisit React if grid complexity demands it at Phase 3 start.
 - 2026-04-21 — Soft-delete strategy confirmed and implemented: deleted captures get deleted_at timestamp via PATCH, not hard-deleted from Supabase.
 - 2026-04-21 — DIST-01: Fonts bundled locally to remove Google Fonts CDN dependency; eliminates fonts.googleapis.com / fonts.gstatic.com from CSP, which can flag during Chrome Web Store review.
+- 2026-04-22 — FEAT-08: "No editing" constraint overridden by explicit user request. Editable fields: title, reason, intent, tags. Re-classify sends rawText through the full classify() pipeline and pre-fills the edit form without auto-saving.

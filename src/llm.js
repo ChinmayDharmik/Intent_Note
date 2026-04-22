@@ -14,7 +14,8 @@
 const SETTINGS_KEY = "intentSettings";
 
 const DEFAULTS = {
-  provider: "lmstudio",
+  provider: "gemini-nano",
+  geminiApiKey: "",
   lmstudioBaseUrl: "http://localhost:1234/v1",
   lmstudioModel: "local-model",
   anthropicApiKey: "",
@@ -81,7 +82,8 @@ Return this exact JSON shape and nothing else:
   "intent": "<one of the 8 types>",
   "title": "<extracted or inferred title, max 60 chars>",
   "reason": "<one sentence: why this was worth saving, max 120 chars>",
-  "extract": "<the most important fact or phrase from the text, max 100 chars>"
+  "extract": "<the most important fact or phrase from the text, max 100 chars>",
+  "tags": ["<3 to 5 short descriptive lowercase tags, e.g. 'psychology', 'decision-making', 'nonfiction'>"]
 }`;
 }
 
@@ -101,9 +103,76 @@ async function callWithRetry(prompt, settings) {
 }
 
 async function callLLM(prompt, settings) {
-  return settings.provider === "anthropic"
-    ? callAnthropic(prompt, settings.anthropicApiKey)
-    : callLMStudio(prompt, settings.lmstudioBaseUrl, settings.lmstudioModel);
+  switch (settings.provider) {
+    case "gemini-nano":  return callGeminiNano(prompt, settings);
+    case "gemini-cloud": return callGeminiCloud(prompt, settings.geminiApiKey);
+    case "anthropic":    return callAnthropic(prompt, settings.anthropicApiKey);
+    default:             return callLMStudio(prompt, settings.lmstudioBaseUrl, settings.lmstudioModel);
+  }
+}
+
+async function callGeminiNano(prompt, settings) {
+  const availability = await self.ai?.languageModel?.availability?.();
+  if (!availability || availability !== "available") {
+    // Fall back to Gemini Cloud if a key is configured
+    if (settings.geminiApiKey?.trim()) {
+      return callGeminiCloud(prompt, settings.geminiApiKey);
+    }
+    const msg = availability === "unavailable"
+      ? "Built-in AI is not supported on this device. Set a Gemini Cloud API key as fallback in settings."
+      : "Built-in AI model is not yet ready. Set a Gemini Cloud API key as fallback, or wait for the model to download.";
+    const err = new Error(msg);
+    err.status = 400;
+    throw err;
+  }
+
+  const session = await self.ai.languageModel.create({
+    systemPrompt: "You are a classification engine. Return ONLY valid JSON — no markdown fences, no explanation.",
+  });
+  try {
+    return await session.prompt(prompt);
+  } finally {
+    session.destroy();
+  }
+}
+
+async function callGeminiCloud(prompt, apiKey) {
+  if (!apiKey || !apiKey.trim()) {
+    const err = new Error("Gemini API key not set — open extension settings");
+    err.status = 401;
+    throw err;
+  }
+
+  let res;
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 300, temperature: 0.1 },
+        }),
+      }
+    );
+  } catch {
+    throw new Error("Could not reach Gemini API — check your connection");
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    const err = new Error(
+      res.status === 400 ? "Gemini API request invalid — check your key" :
+      res.status === 401 || res.status === 403 ? "Invalid Gemini API key — check extension settings" :
+      `Gemini error ${res.status}: ${body.slice(0, 120)}`
+    );
+    err.status = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
 async function callAnthropic(prompt, apiKey) {
@@ -197,11 +266,18 @@ function parseResponse(raw, originalText) {
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    const rawTags = Array.isArray(parsed.tags) ? parsed.tags : [];
+    const tags = rawTags
+      .filter(t => typeof t === "string" && t.trim())
+      .map(t => t.trim().toLowerCase().slice(0, 32))
+      .slice(0, 5);
+
     return {
       intent:  VALID_INTENTS.has(parsed.intent) ? parsed.intent : "other",
       title:   sanitize(parsed.title,   60) || "Untitled",
       reason:  sanitize(parsed.reason,  120) || "Saved from " + new URL("about:blank").href,
       extract: sanitize(parsed.extract, 100) || "",
+      tags,
     };
   } catch {
     return fallbackResult(originalText);
@@ -219,5 +295,6 @@ function fallbackResult(originalText) {
     title:   "Untitled capture",
     reason:  "Classification failed — saved as-is",
     extract: String(originalText || "").slice(0, 100),
+    tags:    [],
   };
 }

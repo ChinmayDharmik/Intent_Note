@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intent — Privacy Policy</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.75;
+      color: #1c1917;
+      background: #fdf9f5;
+      padding: 48px 24px 80px;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .meta { font-size: 13px; color: #78716c; margin-bottom: 40px; }
+    h2 { font-size: 16px; font-weight: 700; margin: 32px 0 10px; }
+    p { margin-bottom: 14px; color: #44403c; }
+    ul { margin: 0 0 14px 20px; color: #44403c; }
+    li { margin-bottom: 6px; }
+    a { color: #292524; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Intent — Privacy Policy</h1>
+    <p class="meta">Last updated: April 2026</p>
+
+    <h2>What Intent collects</h2>
+    <p>Intent saves the following data locally on your device when you capture something:</p>
+    <ul>
+      <li>The text you selected (or the page title and URL if nothing was selected)</li>
+      <li>The URL and title of the page you were on</li>
+      <li>An AI-generated intent classification, title, and one-line reason</li>
+      <li>A timestamp</li>
+    </ul>
+
+    <h2>Where your data is stored</h2>
+    <p>All captures are stored in <code>chrome.storage.local</code> on your device. Your settings (API provider and key) are stored in <code>chrome.storage.sync</code>, which is encrypted and tied to your Google account.</p>
+    <p>If you configure Supabase sync, your captures are additionally stored in the Supabase project you own and control. Intent never sends your data to any server operated by the extension developer.</p>
+
+    <h2>Third-party services</h2>
+    <p>Intent contacts the following external services only when you explicitly configure them:</p>
+    <ul>
+      <li><strong>Anthropic API</strong> — if you select Anthropic as your LLM provider. Your captured text is sent to Anthropic to perform classification. Anthropic's privacy policy applies.</li>
+      <li><strong>LM Studio (localhost)</strong> — a local inference server you run on your own machine. No data leaves your device.</li>
+      <li><strong>Supabase</strong> — a database service you provision and control. Data is sent only to your own Supabase project using credentials you provide.</li>
+    </ul>
+
+    <h2>What Intent does not do</h2>
+    <ul>
+      <li>Does not collect analytics or telemetry</li>
+      <li>Does not share your data with the extension developer or any third party</li>
+      <li>Does not require an account or login</li>
+      <li>Does not read page content beyond what you explicitly capture</li>
+    </ul>
+
+    <h2>Permissions</h2>
+    <p>Intent requests the following Chrome permissions:</p>
+    <ul>
+      <li><strong>storage</strong> — to save and retrieve your captures and settings</li>
+      <li><strong>activeTab</strong> — to read the URL and title of the current tab when you trigger a capture</li>
+      <li><strong>scripting</strong> — to read your text selection from the active tab</li>
+      <li><strong>tabs</strong> — to access the active tab's metadata</li>
+    </ul>
+
+    <h2>Data deletion</h2>
+    <p>You can delete individual captures from the extension popup. To delete all data, remove the extension from Chrome — this clears <code>chrome.storage.local</code> automatically. If you enabled Supabase sync, delete records directly from your Supabase project.</p>
+
+    <h2>Contact</h2>
+    <p>Questions? Reach out at <a href="mailto:chinmaydharmik@gmail.com">chinmaydharmik@gmail.com</a>.</p>
+  </div>
+</body>
+</html>

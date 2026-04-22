@@ -632,4 +632,208 @@ html, body {
 
 .save-btn-wide:hover { opacity: 0.82; }
 
+/* ─── Detail Edit ─── */
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-md-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.15s;
+}
+
+.edit-md-btn:hover { color: var(--text-2); }
+
+.detail-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.detail-edit-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: "Manrope", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: box-shadow 0.15s;
+}
+
+.detail-edit-input:focus { box-shadow: 0 0 0 2px rgba(28,25,23,0.10); }
+
+.detail-edit-textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: "Manrope", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  transition: box-shadow 0.15s;
+}
+
+.detail-edit-textarea:focus { box-shadow: 0 0 0 2px rgba(28,25,23,0.10); }
+
+.detail-edit-select {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: "Manrope", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+
+.detail-edit-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.detail-edit-reshuffle {
+  padding: 8px 14px;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-right: auto;
+}
+
+.detail-edit-reshuffle:hover { background: var(--surface-3); }
+.detail-edit-reshuffle:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.detail-edit-save {
+  padding: 8px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fdf9f5;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.detail-edit-save:hover { opacity: 0.82; }
+.detail-edit-save:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.detail-edit-cancel {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.detail-edit-cancel:hover { color: var(--text-2); }
+
+.detail-edit-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
 .hidden { display: none !important; }
+
+/* ─── Tag Chips (cards + detail) ─── */
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tag-chip {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-2);
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1.6;
+}
+
+.tag-chip:hover {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+/* ─── Nav Tag Cloud ─── */
+
+.nav-tag-divider {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  padding: 12px 10px 6px;
+}
+
+.nav-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 10px 8px;
+}
+
+.nav-tag-chip {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.nav-tag-chip:hover { background: var(--surface-3); color: var(--text); }
+
+.nav-tag-chip.active {
+  background: var(--accent);
+  color: #fdf9f5;
+}

@@ -22,25 +22,66 @@
 
         <main>
 
+            <!-- How to use -->
+            <section class="section">
+                <label class="section-label">How to use</label>
+                <ol class="instructions">
+                    <li>Select any text on a webpage, then press <kbd>Ctrl+Shift+S</kbd> <span class="instructions-aside">(Mac: <kbd>⌘⇧S</kbd>)</span> — Intent classifies it and saves a card to your feed.</li>
+                    <li>No text selected? Press the shortcut anyway — Intent saves the page title and URL as an article capture.</li>
+                    <li>Type a raw thought directly in the extension popup and click Save.</li>
+                    <li>Click the ◆ icon to browse your feed, filter by intent type, or export.</li>
+                </ol>
+            </section>
+
             <!-- Provider Toggle -->
             <section class="section">
                 <label class="section-label">Provider</label>
                 <div class="toggle-group" id="providerToggle">
-                    <button class="toggle-btn active" data-value="lmstudio">
-                        <span class="toggle-icon">🖥️</span>
-                        <span>LM Studio</span>
-                        <span class="toggle-tag">Local</span>
+                    <button class="toggle-btn active" data-value="gemini-nano">
+                        <span class="toggle-icon">✨</span>
+                        <span>Gemini Nano</span>
+                        <span class="toggle-tag">On-device</span>
+                    </button>
+                    <button class="toggle-btn" data-value="gemini-cloud">
+                        <span class="toggle-icon">🌐</span>
+                        <span>Gemini Cloud</span>
+                        <span class="toggle-tag">Cloud</span>
                     </button>
                     <button class="toggle-btn" data-value="anthropic">
                         <span class="toggle-icon">☁️</span>
                         <span>Anthropic</span>
                         <span class="toggle-tag">Cloud</span>
                     </button>
+                    <button class="toggle-btn" data-value="lmstudio">
+                        <span class="toggle-icon">🖥️</span>
+                        <span>LM Studio</span>
+                        <span class="toggle-tag">Local</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Gemini Nano Info -->
+            <section class="section" id="geminiNanoSection">
+                <label class="section-label">Gemini Nano</label>
+                <p class="field-hint" style="padding-top: 6px;">Runs entirely on-device — no API key required. Requires Chrome 127+ with Built-in AI enabled (<code>chrome://flags/#optimization-guide-on-device-model</code>). If unavailable, Intent automatically falls back to Gemini Cloud when a key is configured below.</p>
+            </section>
+
+            <!-- Gemini Cloud Settings -->
+            <section class="section hidden" id="geminiCloudSection">
+                <label class="section-label">Gemini Cloud</label>
+                <div class="field">
+                    <label class="field-label" for="geminiApiKey">API Key</label>
+                    <div class="input-row">
+                        <input type="password" id="geminiApiKey" class="input" placeholder="AIza..."
+                            spellcheck="false" autocomplete="off" />
+                        <button class="icon-btn" id="toggleGeminiKeyVisibility" title="Show / hide key">👁</button>
+                    </div>
+                    <p class="field-hint">Get your key from <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>. Stored locally in your browser only.</p>
                 </div>
             </section>
 
             <!-- LM Studio Settings -->
-            <section class="section" id="lmstudioSection">
+            <section class="section hidden" id="lmstudioSection">
                 <label class="section-label">LM Studio</label>
 
                 <div class="field">

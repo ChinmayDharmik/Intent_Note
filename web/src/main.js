@@ -1,5 +1,5 @@
 import { fetchCaptures, patchCapture, isConfigured } from "./supabase.js";
-import { distill, loadSettings, saveSettings } from "./llm.js";
+import { distill, reclassify, loadSettings, saveSettings } from "./llm.js";
 import { exportSingle, exportBulkZip } from "./export.js";
 import {
   buildCard, buildDetailView, buildDistillHTML,
@@ -10,6 +10,7 @@ import {
 
 let captures     = [];
 let activeFilter = "all";
+let activeTag    = null;
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,28 @@ function buildNav() {
       buildNavItem(label, intent, counts[intent], activeFilter === intent, setFilter)
     );
   });
+
+  // Tag cloud
+  const tagCounts = {};
+  captures.forEach(c => (c.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+  const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+  if (tags.length) {
+    const divider = document.createElement("div");
+    divider.className = "nav-tag-divider";
+    divider.textContent = "Tags";
+    railNav.appendChild(divider);
+
+    const cloud = document.createElement("div");
+    cloud.className = "nav-tag-cloud";
+    tags.forEach(([tag]) => {
+      const chip = document.createElement("button");
+      chip.className = "nav-tag-chip" + (activeTag === tag ? " active" : "");
+      chip.textContent = tag;
+      chip.addEventListener("click", () => setTagFilter(tag));
+      cloud.appendChild(chip);
+    });
+    railNav.appendChild(cloud);
+  }
 }
 
 function setFilter(filter) {
@@ -82,12 +105,22 @@ function setFilter(filter) {
   renderGrid();
 }
 
+function setTagFilter(tag) {
+  activeTag = activeTag === tag ? null : tag;
+  buildNav();
+  renderGrid();
+}
+
 // ─── Grid ─────────────────────────────────────────────────────────────────────
 
 function renderGrid() {
-  const filtered = activeFilter === "all"
+  let filtered = activeFilter === "all"
     ? captures
     : captures.filter(c => c.intent === activeFilter);
+
+  if (activeTag) {
+    filtered = filtered.filter(c => (c.tags || []).includes(activeTag));
+  }
 
   if (filtered.length === 0) {
     mainEl.innerHTML = `
@@ -101,7 +134,7 @@ function renderGrid() {
 
   const grid = document.createElement("div");
   grid.className = "grid";
-  filtered.forEach((capture, i) => grid.appendChild(buildCard(capture, i, openDetail)));
+  filtered.forEach((capture, i) => grid.appendChild(buildCard(capture, i, openDetail, setTagFilter)));
 
   mainEl.innerHTML = "";
   mainEl.appendChild(grid);
@@ -114,11 +147,22 @@ function openDetail(capture) {
     capture,
     renderGrid,
     (distillEl) => runDistillation(capture, distillEl),
-    () => exportSingle(capture)
+    () => exportSingle(capture),
+    (id, fields) => handleEdit(id, fields),
+    (cap) => reclassify(cap)
   );
   mainEl.innerHTML = "";
   mainEl.appendChild(el);
   mainEl.scrollTop = 0;
+}
+
+async function handleEdit(captureId, fields) {
+  await patchCapture(captureId, fields);
+  const idx = captures.findIndex((c) => c.id === captureId);
+  if (idx !== -1) {
+    captures[idx] = { ...captures[idx], ...fields };
+    openDetail(captures[idx]);
+  }
 }
 
 async function runDistillation(capture, distillEl) {

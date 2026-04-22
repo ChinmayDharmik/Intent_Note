@@ -57,6 +57,14 @@ async function clearAllCaptures() {
   await chrome.storage.local.set({ captures: [] });
 }
 
+async function updateCapture(id, mutate) {
+  const captures = await getCaptures();
+  const i = captures.findIndex((c) => c.id === id);
+  if (i < 0) return;
+  mutate(captures[i]);
+  await chrome.storage.local.set({ captures });
+}
+
 // ─── Supabase Sync ─────────────────────────────────────────────────────────────
 
 async function syncToSupabase(capture) {
@@ -79,6 +87,7 @@ async function syncToSupabase(capture) {
       title:      capture.title,
       reason:     capture.reason,
       extract:    capture.extract,
+      tags:       capture.tags || [],
       raw_text:   capture.rawText,
       url:        capture.url,
       page_title: capture.pageTitle,
@@ -151,6 +160,7 @@ async function handleSave(payload, sendResponse) {
       title: classified.title,
       reason: classified.reason,
       extract: classified.extract,
+      tags: classified.tags || [],
       rawText: text.trim().slice(0, 300),
       url,
       pageTitle,
@@ -215,6 +225,65 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
       return true;
 
+    case "ADD_TAG": {
+      const { id: addId, tag: addTag } = message.payload;
+      const normalized = addTag.trim().toLowerCase().slice(0, 32);
+      if (normalized) {
+        updateCapture(addId, (c) => {
+          c.tags = c.tags || [];
+          if (!c.tags.includes(normalized)) c.tags.push(normalized);
+        }).then(() => sendResponse({ success: true }));
+      } else {
+        sendResponse({ success: true });
+      }
+      return true;
+    }
+
+    case "REMOVE_TAG": {
+      const { id: removeId, tag: removeTag } = message.payload;
+      updateCapture(removeId, (c) => {
+        c.tags = (c.tags || []).filter((t) => t !== removeTag);
+      }).then(() => sendResponse({ success: true }));
+      return true;
+    }
+
+    case "RECLASSIFY_CAPTURE": {
+      const { id: reclassId } = message.payload;
+      (async () => {
+        const all = await getCaptures();
+        const cap = all.find((c) => c.id === reclassId);
+        if (!cap) return sendResponse({ success: false, error: "Not found" });
+        const settings = await loadSettings();
+        const classified = await classify(
+          cap.rawText || cap.title,
+          cap.url,
+          cap.pageTitle,
+          settings
+        );
+        sendResponse({ success: true, classified });
+      })().catch((err) => sendResponse({ success: false, error: err.message }));
+      return true;
+    }
+
+    case "UPDATE_CAPTURE": {
+      const { id: editId, fields } = message.payload;
+      updateCapture(editId, (c) => {
+        if (fields.title  !== undefined) c.title  = fields.title;
+        if (fields.reason !== undefined) c.reason = fields.reason;
+        if (fields.tags   !== undefined) c.tags   = fields.tags;
+        if (fields.intent !== undefined) {
+          c.intent     = fields.intent;
+          c.intentMeta = INTENT_META[fields.intent] || INTENT_META.other;
+        }
+      }).then(async () => {
+        const all = await getCaptures();
+        const updated = all.find((c) => c.id === editId);
+        if (updated) syncToSupabase(updated).catch(() => {});
+        sendResponse({ success: true });
+      });
+      return true;
+    }
+
     case "CLEAR_ALL":
       clearAllCaptures().then(() => sendResponse({ success: true }));
       return true;
@@ -242,26 +311,25 @@ chrome.commands.onCommand.addListener(async (command) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
 
+  const url = tab.url || "";
+  const pageTitle = tab.title || "";
+
   try {
-    // Inject a one-off script to grab the current selection
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => ({
-        text: window.getSelection()?.toString().trim() || "",
-        url: window.location.href,
-        pageTitle: document.title,
-      }),
-    });
-
-    const payload = results?.[0]?.result;
-    if (!payload) return;
-
-    // If no text selected, fall back to saving the page title + URL as an article
-    if (!payload.text) {
-      payload.text = `${payload.pageTitle} — ${payload.url}`;
+    // Ask the content script for the pre-cached selection (captured on selectionchange,
+    // before the service worker woke up and any site handler could clear it).
+    let text = "";
+    try {
+      const res = await chrome.tabs.sendMessage(tab.id, { type: "GET_SELECTION" });
+      text = res?.text || "";
+    } catch {
+      // Content script not reachable (restricted page) — fall through to page fallback.
     }
 
-    handleSave(payload, () => {});
+    if (!text) {
+      text = `${pageTitle} — ${url}`;
+    }
+
+    handleSave({ text, url, pageTitle }, () => {});
   } catch (err) {
     console.error("[Intent] Shortcut failed:", err);
   }

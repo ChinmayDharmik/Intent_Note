@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="440" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fdf9f5"/>
+      <stop offset="100%" stop-color="#ede8e1"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30%" cy="50%" r="60%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#fff7e6" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#fdf9f5" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="card-shadow" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#1c1917" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="440" height="280" fill="url(#bg)"/>
+  <rect width="440" height="280" fill="url(#glow)"/>
+
+  <!-- Divider -->
+  <line x1="210" y1="32" x2="210" y2="248" stroke="#e2ddd7" stroke-width="1"/>
+
+  <!-- ── LEFT COLUMN: brand identity (x 0–210, centered at 105) ── -->
+
+  <!-- Diamond mark -->
+  <text x="105" y="90" font-size="20" fill="#c2b89a" font-family="Georgia, serif" text-anchor="middle">◆</text>
+
+  <!-- Wordmark -->
+  <text x="105" y="128" font-size="42" font-weight="600" fill="#1c1917" font-family="Georgia, serif" text-anchor="middle">Intent</text>
+
+  <!-- Rule under wordmark -->
+  <line x1="60" y1="140" x2="150" y2="140" stroke="#d6cfc6" stroke-width="1"/>
+
+  <!-- Tagline — two lines -->
+  <text x="105" y="162" font-size="11" fill="#78716c" font-family="sans-serif" text-anchor="middle" letter-spacing="0.1">Save why it mattered,</text>
+  <text x="105" y="178" font-size="11" fill="#78716c" font-family="sans-serif" text-anchor="middle" letter-spacing="0.1">not just what you found.</text>
+
+  <!-- Feature pills -->
+  <rect x="38" y="197" width="134" height="20" rx="10" fill="#f0ebe4"/>
+  <text x="105" y="211" font-size="10" font-weight="600" fill="#a8a29e" font-family="sans-serif" text-anchor="middle" letter-spacing="0.4">AI · SYNC · EXPORT</text>
+
+  <!-- ── RIGHT COLUMN: 3 cards (x 226–420) ── -->
+
+  <!-- Card 1 — Book -->
+  <g transform="translate(226, 18)" filter="url(#card-shadow)">
+    <rect width="194" height="72" rx="9" fill="#ffffff"/>
+    <text x="14" y="30" font-size="16">📚</text>
+    <rect x="36" y="14" width="36" height="15" rx="3" fill="#f7f3ef"/>
+    <text x="54" y="25.5" font-size="8.5" font-weight="700" fill="#a8a29e" text-anchor="middle" font-family="sans-serif" letter-spacing="0.6">BOOK</text>
+    <text x="14" y="51" font-size="11.5" font-weight="600" fill="#1c1917" font-family="Georgia, serif">Thinking, Fast and Slow</text>
+    <text x="14" y="65" font-size="10" fill="#78716c" font-family="sans-serif">Essential for decision-making</text>
+  </g>
+
+  <!-- Card 2 — Idea -->
+  <g transform="translate(226, 104)" filter="url(#card-shadow)">
+    <rect width="194" height="72" rx="9" fill="#ffffff"/>
+    <text x="14" y="30" font-size="16">💡</text>
+    <rect x="36" y="14" width="32" height="15" rx="3" fill="#f7f3ef"/>
+    <text x="52" y="25.5" font-size="8.5" font-weight="700" fill="#a8a29e" text-anchor="middle" font-family="sans-serif" letter-spacing="0.6">IDEA</text>
+    <text x="14" y="51" font-size="11.5" font-weight="600" fill="#1c1917" font-family="Georgia, serif">The map is not the territory</text>
+    <text x="14" y="65" font-size="10" fill="#78716c" font-family="sans-serif">A mental model for clear thinking</text>
+  </g>
+
+  <!-- Card 3 — Movie -->
+  <g transform="translate(226, 190)" filter="url(#card-shadow)">
+    <rect width="194" height="72" rx="9" fill="#ffffff"/>
+    <text x="14" y="30" font-size="16">🎬</text>
+    <rect x="36" y="14" width="40" height="15" rx="3" fill="#f7f3ef"/>
+    <text x="56" y="25.5" font-size="8.5" font-weight="700" fill="#a8a29e" text-anchor="middle" font-family="sans-serif" letter-spacing="0.6">MOVIE</text>
+    <text x="14" y="51" font-size="11.5" font-weight="600" fill="#1c1917" font-family="Georgia, serif">Oppenheimer</text>
+    <text x="14" y="65" font-size="10" fill="#78716c" font-family="sans-serif">Must watch this weekend</text>
+  </g>
+</svg>

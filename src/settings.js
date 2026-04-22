@@ -7,7 +7,8 @@
 const STORAGE_KEY = "intentSettings";
 
 const DEFAULTS = {
-  provider: "lmstudio",
+  provider: "gemini-nano",
+  geminiApiKey: "",
   lmstudioBaseUrl: "http://localhost:1234/v1",
   lmstudioModel: "local-model",
   anthropicApiKey: "",
@@ -17,21 +18,25 @@ const DEFAULTS = {
 
 // ─── Elements ──────────────────────────────────────────────────────────────────
 
-const providerBtns     = document.querySelectorAll(".toggle-btn");
-const lmstudioSection  = document.getElementById("lmstudioSection");
-const anthropicSection = document.getElementById("anthropicSection");
-const lmBaseUrlInput   = document.getElementById("lmstudioBaseUrl");
-const lmModelInput     = document.getElementById("lmstudioModel");
-const apiKeyInput      = document.getElementById("anthropicApiKey");
-const toggleKeyBtn     = document.getElementById("toggleKeyVisibility");
+const providerBtns       = document.querySelectorAll(".toggle-btn");
+const geminiNanoSection  = document.getElementById("geminiNanoSection");
+const geminiCloudSection = document.getElementById("geminiCloudSection");
+const lmstudioSection    = document.getElementById("lmstudioSection");
+const anthropicSection   = document.getElementById("anthropicSection");
+const geminiApiKeyInput  = document.getElementById("geminiApiKey");
+const toggleGeminiKeyBtn = document.getElementById("toggleGeminiKeyVisibility");
+const lmBaseUrlInput     = document.getElementById("lmstudioBaseUrl");
+const lmModelInput       = document.getElementById("lmstudioModel");
+const apiKeyInput        = document.getElementById("anthropicApiKey");
+const toggleKeyBtn       = document.getElementById("toggleKeyVisibility");
 const supabaseUrlInput     = document.getElementById("supabaseUrl");
 const supabaseAnonKeyInput = document.getElementById("supabaseAnonKey");
 const toggleSupabaseKeyBtn = document.getElementById("toggleSupabaseKeyVisibility");
-const saveBtn          = document.getElementById("saveBtn");
-const testBtn          = document.getElementById("testBtn");
-const statusEl         = document.getElementById("status");
+const saveBtn            = document.getElementById("saveBtn");
+const testBtn            = document.getElementById("testBtn");
+const statusEl           = document.getElementById("status");
 
-let currentProvider = "lmstudio";
+let currentProvider = "gemini-nano";
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
 
@@ -41,6 +46,7 @@ async function init() {
     const s = result[STORAGE_KEY] || DEFAULTS;
 
     currentProvider              = s.provider        || DEFAULTS.provider;
+    geminiApiKeyInput.value      = s.geminiApiKey     || "";
     lmBaseUrlInput.value         = s.lmstudioBaseUrl  || DEFAULTS.lmstudioBaseUrl;
     lmModelInput.value           = s.lmstudioModel    || DEFAULTS.lmstudioModel;
     apiKeyInput.value            = s.anthropicApiKey  || "";
@@ -62,13 +68,15 @@ function setProvider(value) {
     btn.classList.toggle("active", btn.dataset.value === value);
   });
 
-  if (value === "lmstudio") {
-    lmstudioSection.classList.remove("hidden");
-    anthropicSection.classList.add("hidden");
-  } else {
-    lmstudioSection.classList.add("hidden");
-    anthropicSection.classList.remove("hidden");
-  }
+  geminiNanoSection.classList.add("hidden");
+  geminiCloudSection.classList.add("hidden");
+  anthropicSection.classList.add("hidden");
+  lmstudioSection.classList.add("hidden");
+
+  if (value === "gemini-nano")  geminiNanoSection.classList.remove("hidden");
+  if (value === "gemini-cloud") geminiCloudSection.classList.remove("hidden");
+  if (value === "anthropic")    anthropicSection.classList.remove("hidden");
+  if (value === "lmstudio")     lmstudioSection.classList.remove("hidden");
 
   hideStatus();
 }
@@ -78,6 +86,12 @@ providerBtns.forEach((btn) => {
 });
 
 // ─── API Key Visibility ────────────────────────────────────────────────────────
+
+toggleGeminiKeyBtn.addEventListener("click", () => {
+  const isPassword = geminiApiKeyInput.type === "password";
+  geminiApiKeyInput.type = isPassword ? "text" : "password";
+  toggleGeminiKeyBtn.textContent = isPassword ? "🙈" : "👁";
+});
 
 toggleKeyBtn.addEventListener("click", () => {
   const isPassword = apiKeyInput.type === "password";
@@ -119,10 +133,14 @@ testBtn.addEventListener("click", async () => {
   const settings = buildSettings();
 
   try {
-    if (settings.provider === "lmstudio") {
-      await testLMStudio(settings.lmstudioBaseUrl);
-    } else {
+    if (settings.provider === "gemini-nano") {
+      await testGeminiNano();
+    } else if (settings.provider === "gemini-cloud") {
+      await testGeminiCloud(settings.geminiApiKey);
+    } else if (settings.provider === "anthropic") {
       await testAnthropic(settings.anthropicApiKey);
+    } else {
+      await testLMStudio(settings.lmstudioBaseUrl);
     }
     showStatus("Connection successful.", "success");
   } catch (err) {
@@ -132,6 +150,37 @@ testBtn.addEventListener("click", async () => {
     testBtn.textContent = "Test connection";
   }
 });
+
+async function testGeminiNano() {
+  if (!("ai" in self) || !self.ai.languageModel) {
+    throw new Error("Prompt API not detected — enable chrome://flags/#optimization-guide-on-device-model");
+  }
+  const availability = await self.ai.languageModel.availability();
+  if (availability === "unavailable") throw new Error("Built-in AI not supported on this device");
+  if (availability === "downloadable") throw new Error("Model needs to download first — try again after Chrome downloads it");
+  if (availability === "downloading") throw new Error("Model is still downloading — try again in a moment");
+}
+
+async function testGeminiCloud(apiKey) {
+  if (!apiKey || !apiKey.trim()) throw new Error("API key is empty");
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "Hi" }] }],
+        generationConfig: { maxOutputTokens: 5 },
+      }),
+    }
+  );
+  if (res.status === 400) throw new Error("Invalid request — check your API key");
+  if (res.status === 401 || res.status === 403) throw new Error("Invalid API key — check and re-enter");
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gemini error ${res.status}: ${body.slice(0, 100)}`);
+  }
+}
 
 async function testLMStudio(baseUrl) {
   const url = (baseUrl || "http://localhost:1234/v1").replace(/\/$/, "");
@@ -171,6 +220,7 @@ async function testAnthropic(apiKey) {
 function buildSettings() {
   return {
     provider:        currentProvider,
+    geminiApiKey:    geminiApiKeyInput.value.trim(),
     lmstudioBaseUrl: lmBaseUrlInput.value.trim() || DEFAULTS.lmstudioBaseUrl,
     lmstudioModel:   lmModelInput.value.trim()   || DEFAULTS.lmstudioModel,
     anthropicApiKey: apiKeyInput.value.trim(),

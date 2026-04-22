@@ -585,6 +585,270 @@ kbd {
   to   { background-position: 200% 0; }
 }
 
+/* ─── Tag Cloud (filter bar) ─── */
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 12px 4px;
+  background: var(--surface);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.tag-cloud-chip {
+  padding: 2px 9px;
+  background: var(--surface-2);
+  border: none;
+  border-radius: 99px;
+  color: var(--text-3);
+  font-family: "Manrope", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tag-cloud-chip:hover {
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+
+.tag-clear-btn {
+  padding: 2px 9px;
+  background: var(--accent);
+  border: none;
+  border-radius: 99px;
+  color: #fdf9f5;
+  font-family: "Manrope", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.tag-clear-btn:hover { opacity: 0.8; }
+
+/* ─── Card Tags ─── */
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+  align-items: center;
+  min-height: 18px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 4px 1px 7px;
+  background: var(--surface-2);
+  border-radius: 99px;
+}
+
+.tag-chip-text {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  line-height: 1.6;
+  transition: color 0.12s;
+}
+
+.tag-chip-text:hover { color: var(--text-2); }
+
+.tag-chip-remove {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.card-tags:hover .tag-chip-remove { opacity: 0.5; }
+.tag-chip-remove:hover { opacity: 1 !important; color: var(--danger); }
+
+.tag-add-btn {
+  background: none;
+  border: none;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+
+.card-tags:hover .tag-add-btn { opacity: 1; }
+.tag-add-btn:hover { background: var(--surface-2); color: var(--text-2); }
+
+.tag-input {
+  height: 18px;
+  width: 72px;
+  padding: 0 7px;
+  background: var(--surface-3);
+  border: none;
+  border-radius: 99px;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  color: var(--text);
+  outline: none;
+}
+
+.tag-input::placeholder { color: var(--text-3); }
+
+/* ─── Card Actions (edit + delete button group) ─── */
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.card-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.card:hover .card-edit-btn { opacity: 1; }
+.card-edit-btn:hover { color: var(--text-2); background: var(--surface-2); }
+
+/* ─── Card Edit Form ─── */
+
+.card-edit-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-edit-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.card-edit-input:focus { box-shadow: 0 0 0 2px rgba(28,25,23,0.10); }
+
+.card-edit-textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+}
+
+.card-edit-textarea:focus { box-shadow: 0 0 0 2px rgba(28,25,23,0.10); }
+
+.card-edit-select {
+  width: 100%;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+
+.card-edit-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.card-edit-reshuffle {
+  flex: 1;
+  padding: 4px 0;
+  background: var(--surface-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: "Manrope", sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.card-edit-reshuffle:hover { background: var(--surface-3); opacity: 0.75; }
+.card-edit-reshuffle:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.card-edit-save {
+  padding: 4px 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fdf9f5;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.card-edit-save:hover { opacity: 0.82; }
+
+.card-edit-cancel {
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.card-edit-cancel:hover { color: var(--text-2); }
+
 /* ─── Error Banner ─── */
 
 .error-banner {

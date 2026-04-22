@@ -11,8 +11,9 @@ export function captureToMarkdown(capture) {
   if (capture.url) lines.push(`url: "${capture.url}"`);
   if (capture.page_title) lines.push(`page_title: "${yamlEsc(capture.page_title)}"`);
   lines.push(`saved_at: ${capture.saved_at || new Date().toISOString()}`);
+  const allTags = [`intent/${capture.intent || "other"}`, ...(capture.tags || [])];
   lines.push(`tags:`);
-  lines.push(`  - intent/${capture.intent || "other"}`);
+  allTags.forEach(t => lines.push(`  - ${t}`));
   lines.push("---");
   lines.push("");
 

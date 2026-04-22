@@ -3,10 +3,26 @@
  * Includes visible error reporting for environments where DevTools is unavailable.
  */
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const INTENT_META = {
+  book:    { label: "Book",    emoji: "📚" },
+  movie:   { label: "Movie",   emoji: "🎬" },
+  article: { label: "Article", emoji: "📰" },
+  idea:    { label: "Idea",    emoji: "💡" },
+  quote:   { label: "Quote",   emoji: "💬" },
+  product: { label: "Product", emoji: "🛍️" },
+  recipe:  { label: "Recipe",  emoji: "🍳" },
+  other:   { label: "Other",   emoji: "📌" },
+};
+
+const INTENT_OPTIONS = ["book", "movie", "article", "idea", "quote", "product", "recipe", "other"];
+
 // ─── State ─────────────────────────────────────────────────────────────────────
 
 let allCaptures = [];
 let activeFilter = "all";
+let activeTag = null;
 
 // ─── Elements ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +37,7 @@ const tabs         = document.getElementById("tabs");
 const errorBanner  = document.getElementById("errorBanner");
 const searchInput  = document.getElementById("searchInput");
 const syncDot      = document.getElementById("syncDot");
+const tagCloud     = document.getElementById("tagCloud");
 let searchQuery = "";
 let attachPage  = true;
 
@@ -113,18 +130,23 @@ function render() {
     ? allCaptures
     : allCaptures.filter((c) => c.intent === activeFilter);
 
+  if (activeTag) {
+    filtered = filtered.filter((c) => (c.tags || []).includes(activeTag));
+  }
+
   captureCount.textContent = `${allCaptures.length} saved`;
-  // Apply search filter if query present (case‑insensitive)
   if (searchQuery.trim()) {
     const q = searchQuery.trim().toLowerCase();
     filtered = filtered.filter(c =>
       (c.title && c.title.toLowerCase().includes(q)) ||
       (c.reason && c.reason.toLowerCase().includes(q)) ||
-      (c.rawText && c.rawText.toLowerCase().includes(q))
+      (c.rawText && c.rawText.toLowerCase().includes(q)) ||
+      (c.tags || []).some(t => t.includes(q))
     );
   }
 
   updateTabBadges();
+  renderTagCloud();
 
   if (filtered.length === 0) {
     feed.classList.add("hidden");
@@ -162,6 +184,43 @@ function updateTabBadges() {
     } else if (badge) {
       badge.remove();
     }
+  });
+}
+
+function renderTagCloud() {
+  const intentFiltered = activeFilter === "all"
+    ? allCaptures
+    : allCaptures.filter((c) => c.intent === activeFilter);
+
+  const counts = {};
+  intentFiltered.forEach((c) => {
+    (c.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; });
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([t]) => t);
+
+  if (sorted.length === 0 && !activeTag) {
+    tagCloud.classList.add("hidden");
+    return;
+  }
+
+  tagCloud.classList.remove("hidden");
+  tagCloud.innerHTML = "";
+
+  if (activeTag) {
+    const clearBtn = document.createElement("button");
+    clearBtn.className = "tag-clear-btn";
+    clearBtn.textContent = "✕ " + activeTag;
+    clearBtn.addEventListener("click", () => { activeTag = null; render(); });
+    tagCloud.appendChild(clearBtn);
+  }
+
+  sorted.filter((t) => t !== activeTag).forEach((tag) => {
+    const chip = document.createElement("button");
+    chip.className = "tag-cloud-chip";
+    chip.textContent = tag;
+    chip.addEventListener("click", () => { activeTag = tag; render(); });
+    tagCloud.appendChild(chip);
   });
 }
 
@@ -204,9 +263,64 @@ function buildCard(capture, index) {
 
   meta.appendChild(badge);
   meta.appendChild(time);
+
+  const tagsRow = document.createElement("div");
+  tagsRow.className = "card-tags";
+
+  (capture.tags || []).forEach((tag) => {
+    const chip = document.createElement("span");
+    chip.className = "tag-chip";
+
+    const label = document.createElement("button");
+    label.className = "tag-chip-text";
+    label.textContent = tag;
+    label.addEventListener("click", (e) => {
+      e.stopPropagation();
+      activeTag = tag;
+      render();
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "tag-chip-remove";
+    removeBtn.textContent = "×";
+    removeBtn.title = "Remove tag";
+    removeBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await handleRemoveTag(capture.id, tag);
+    });
+
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
+    tagsRow.appendChild(chip);
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "tag-add-btn";
+  addBtn.textContent = "+ tag";
+  addBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showTagInput(capture.id, tagsRow, addBtn);
+  });
+  tagsRow.appendChild(addBtn);
+
   body.appendChild(title);
   body.appendChild(reason);
+  body.appendChild(tagsRow);
   body.appendChild(meta);
+
+  const cardActions = document.createElement("div");
+  cardActions.className = "card-actions";
+
+  const editBtn = document.createElement("button");
+  editBtn.className = "card-edit-btn";
+  editBtn.title = "Edit";
+  editBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+    <path d="M7.5 1.5l2 2L3 10H1V8L7.5 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+  editBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showCardEditMode(card, capture);
+  });
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "card-delete";
@@ -214,15 +328,17 @@ function buildCard(capture, index) {
   deleteBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none">
     <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`;
-
   deleteBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     handleDelete(capture.id, card);
   });
 
+  cardActions.appendChild(editBtn);
+  cardActions.appendChild(deleteBtn);
+
   card.appendChild(emoji);
   card.appendChild(body);
-  card.appendChild(deleteBtn);
+  card.appendChild(cardActions);
 
   if (capture.url) {
     card.addEventListener("click", () => {
@@ -297,6 +413,152 @@ quickInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleQuickSave();
   if (e.key === "Escape") quickInput.blur();
 });
+// ─── Tags ──────────────────────────────────────────────────────────────────────
+
+function showTagInput(captureId, tagsRow, addBtn) {
+  addBtn.classList.add("hidden");
+  const input = document.createElement("input");
+  input.className = "tag-input";
+  input.placeholder = "add tag…";
+  input.maxLength = 32;
+
+  const commit = async () => {
+    const val = input.value.trim().toLowerCase();
+    input.remove();
+    addBtn.classList.remove("hidden");
+    if (val) await handleAddTag(captureId, val);
+  };
+
+  input.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") commit();
+    if (e.key === "Escape") { input.remove(); addBtn.classList.remove("hidden"); }
+  });
+  input.addEventListener("blur", commit);
+  input.addEventListener("click", (e) => e.stopPropagation());
+
+  tagsRow.insertBefore(input, addBtn);
+  input.focus();
+}
+
+async function handleAddTag(captureId, tag) {
+  const normalized = tag.trim().toLowerCase().slice(0, 32);
+  if (!normalized) return;
+  await chrome.runtime.sendMessage({ type: "ADD_TAG", payload: { id: captureId, tag: normalized } });
+  const capture = allCaptures.find((c) => c.id === captureId);
+  if (capture) {
+    capture.tags = capture.tags || [];
+    if (!capture.tags.includes(normalized)) capture.tags.push(normalized);
+  }
+  render();
+}
+
+async function handleRemoveTag(captureId, tag) {
+  await chrome.runtime.sendMessage({ type: "REMOVE_TAG", payload: { id: captureId, tag } });
+  const capture = allCaptures.find((c) => c.id === captureId);
+  if (capture) capture.tags = (capture.tags || []).filter((t) => t !== tag);
+  render();
+}
+
+// ─── Edit ──────────────────────────────────────────────────────────────────────
+
+function showCardEditMode(card, capture) {
+  card.innerHTML = "";
+  card.style.cursor = "default";
+
+  const form = document.createElement("div");
+  form.className = "card-edit-form";
+  form.addEventListener("click", (e) => e.stopPropagation());
+
+  const titleInput = document.createElement("input");
+  titleInput.className = "card-edit-input";
+  titleInput.value = capture.title || "";
+  titleInput.placeholder = "Title";
+
+  const reasonInput = document.createElement("textarea");
+  reasonInput.className = "card-edit-textarea";
+  reasonInput.value = capture.reason || "";
+  reasonInput.placeholder = "Why did this matter?";
+  reasonInput.rows = 2;
+
+  const intentSelect = document.createElement("select");
+  intentSelect.className = "card-edit-select";
+  INTENT_OPTIONS.forEach((k) => {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = `${INTENT_META[k].emoji} ${INTENT_META[k].label}`;
+    if (k === capture.intent) opt.selected = true;
+    intentSelect.appendChild(opt);
+  });
+
+  const tagsInput = document.createElement("input");
+  tagsInput.className = "card-edit-input";
+  tagsInput.value = (capture.tags || []).join(", ");
+  tagsInput.placeholder = "Tags (comma-separated)";
+
+  const actions = document.createElement("div");
+  actions.className = "card-edit-actions";
+
+  const reshuffleBtn = document.createElement("button");
+  reshuffleBtn.className = "card-edit-reshuffle";
+  reshuffleBtn.textContent = "↻ Re-classify";
+  reshuffleBtn.addEventListener("click", async () => {
+    reshuffleBtn.disabled = true;
+    reshuffleBtn.textContent = "Classifying…";
+    const res = await chrome.runtime.sendMessage({ type: "RECLASSIFY_CAPTURE", payload: { id: capture.id } });
+    if (res?.success && res.classified) {
+      titleInput.value  = res.classified.title  || "";
+      reasonInput.value = res.classified.reason || "";
+      intentSelect.value = res.classified.intent || capture.intent;
+      tagsInput.value   = (res.classified.tags || []).join(", ");
+    }
+    reshuffleBtn.disabled = false;
+    reshuffleBtn.textContent = "↻ Re-classify";
+  });
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "card-edit-save";
+  saveBtn.textContent = "Save";
+  saveBtn.addEventListener("click", async () => {
+    const tags = tagsInput.value.split(",").map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean);
+    await handleUpdateCapture(capture.id, {
+      title:  titleInput.value.trim(),
+      reason: reasonInput.value.trim(),
+      intent: intentSelect.value,
+      tags,
+    });
+  });
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "card-edit-cancel";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", () => render());
+
+  actions.appendChild(reshuffleBtn);
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+
+  form.appendChild(titleInput);
+  form.appendChild(reasonInput);
+  form.appendChild(intentSelect);
+  form.appendChild(tagsInput);
+  form.appendChild(actions);
+  card.appendChild(form);
+  titleInput.focus();
+}
+
+async function handleUpdateCapture(id, fields) {
+  const res = await chrome.runtime.sendMessage({ type: "UPDATE_CAPTURE", payload: { id, fields } });
+  if (res?.success) {
+    const capture = allCaptures.find((c) => c.id === id);
+    if (capture) {
+      Object.assign(capture, fields);
+      capture.intentMeta = INTENT_META[fields.intent] || capture.intentMeta;
+    }
+    render();
+  }
+}
+
 // ─── Delete ────────────────────────────────────────────────────────────────────
 
 /**

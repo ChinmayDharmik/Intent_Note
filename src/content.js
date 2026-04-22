@@ -4,6 +4,16 @@
  * Never touches storage or LLM directly.
  */
 
+// ─── Selection Pre-capture ─────────────────────────────────────────────────────
+// Store the selection on change so background can retrieve it instantly on shortcut,
+// avoiding the race where executeScript runs after the site clears the selection.
+
+let lastSelection = "";
+document.addEventListener("selectionchange", () => {
+  const sel = window.getSelection();
+  lastSelection = sel ? sel.toString().trim() : "";
+});
+
 // ─── Toast ─────────────────────────────────────────────────────────────────────
 
 let activeToast = null;
@@ -166,8 +176,12 @@ function truncate(str, max) {
 
 // ─── Message Listener ──────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
+    case "GET_SELECTION":
+      sendResponse({ text: lastSelection });
+      break;
+
     case "SAVING":
       showSavingToast();
       break;
