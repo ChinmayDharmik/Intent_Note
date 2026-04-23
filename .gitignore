@@ -26,3 +26,16 @@ Thumbs.db
 .env.local
 
 .claude/
+.claudeignore
+
+# Internal dev docs
+CLAUDE.md
+MASTER_BRIEF.md
+STATE_LEDGER.md
+arch.md
+intent-prd.md
+intent-prd V2.md
+
+# Store / distribution assets
+store/
+image/
