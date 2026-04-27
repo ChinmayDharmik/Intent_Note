@@ -1,23 +1,33 @@
-const BASE = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
-const KEY  = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { loadSettings } from "./llm.js";
+
+function getConfig() {
+  const s = loadSettings();
+  return {
+    base: s.supabaseUrl?.replace(/\/$/, "") || "",
+    key:  s.supabaseAnonKey || "",
+  };
+}
 
 function headers(extra = {}) {
+  const { key } = getConfig();
   return {
     "Content-Type": "application/json",
     "Accept": "application/json",
-    "apikey": KEY,
-    "Authorization": `Bearer ${KEY}`,
+    "apikey": key,
+    "Authorization": `Bearer ${key}`,
     ...extra,
   };
 }
 
 export function isConfigured() {
-  return Boolean(BASE && KEY);
+  const { base, key } = getConfig();
+  return Boolean(base && key);
 }
 
 export async function fetchCaptures() {
+  const { base } = getConfig();
   const res = await fetch(
-    `${BASE}/rest/v1/captures?deleted_at=is.null&order=saved_at.desc`,
+    `${base}/rest/v1/captures?deleted_at=is.null&order=saved_at.desc`,
     { headers: headers() }
   );
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text().catch(() => "")}`);
@@ -25,8 +35,9 @@ export async function fetchCaptures() {
 }
 
 export async function patchCapture(id, data) {
+  const { base } = getConfig();
   const res = await fetch(
-    `${BASE}/rest/v1/captures?id=eq.${encodeURIComponent(id)}`,
+    `${base}/rest/v1/captures?id=eq.${encodeURIComponent(id)}`,
     { method: "PATCH", headers: headers(), body: JSON.stringify(data) }
   );
   if (!res.ok) throw new Error(`Supabase PATCH ${res.status}`);

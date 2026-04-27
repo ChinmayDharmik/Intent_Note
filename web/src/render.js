@@ -297,6 +297,12 @@ export function buildSettingsPanel(settings, onSave, onClose) {
           <label class="field-label" style="margin-top:12px">Model</label>
           <input type="text" id="lmstudioModel" class="input" value="${escAttr(settings.lmstudioModel)}" />
         </div>
+        <div class="field" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <label class="field-label">Sync — Supabase URL</label>
+          <input type="text" id="supabaseUrl" class="input" value="${escAttr(settings.supabaseUrl || "")}" placeholder="https://xxxx.supabase.co" autocomplete="off" />
+          <label class="field-label" style="margin-top:12px">Supabase Anon Key</label>
+          <input type="password" id="supabaseAnonKey" class="input" value="${escAttr(settings.supabaseAnonKey || "")}" placeholder="eyJ…" autocomplete="off" />
+        </div>
       </div>
       <div class="settings-footer">
         <button class="save-btn-wide" id="settingsSave">Save</button>
@@ -323,6 +329,8 @@ export function buildSettingsPanel(settings, onSave, onClose) {
       geminiApiKey:    el.querySelector("#geminiApiKey").value.trim(),
       lmstudioBaseUrl: el.querySelector("#lmstudioBaseUrl").value.trim(),
       lmstudioModel:   el.querySelector("#lmstudioModel").value.trim(),
+      supabaseUrl:     el.querySelector("#supabaseUrl").value.trim(),
+      supabaseAnonKey: el.querySelector("#supabaseAnonKey").value.trim(),
     });
     onClose();
   });
