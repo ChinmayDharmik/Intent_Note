@@ -1,17 +1,26 @@
 import { loadSettings } from "./llm.js";
 
+const LOCAL_URL = "http://localhost:47832";
+
 // ─── Local (Electron) ─────────────────────────────────────────────────────────
 
 export function isConfigured() {
-  if (typeof window !== 'undefined' && window.electronBridge) return true;
-  const { base, key } = getConfig();
-  return Boolean(base && key);
+  // Always true — fetchCaptures tries all sources and throws only if all fail
+  return true;
 }
 
 export async function fetchCaptures() {
   if (typeof window !== 'undefined' && window.electronBridge) {
     return window.electronBridge.getCaptures();
   }
+  // Try local HTTP server (works when Electron desktop app is running alongside browser)
+  try {
+    const res = await fetch(`${LOCAL_URL}/captures`);
+    if (res.ok) return res.json();
+  } catch {}
+  // Fall back to Supabase
+  const { base, key } = getConfig();
+  if (!base || !key) throw new Error("Open the desktop app, or add Supabase credentials in Settings (⚙).");
   return fetchFromSupabase();
 }
 
@@ -19,6 +28,15 @@ export async function patchCapture(id, data) {
   if (typeof window !== 'undefined' && window.electronBridge) {
     return window.electronBridge.patchCapture(id, data);
   }
+  // Try local HTTP server first
+  try {
+    const res = await fetch(`${LOCAL_URL}/captures/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) return;
+  } catch {}
   return patchInSupabase(id, data);
 }
 

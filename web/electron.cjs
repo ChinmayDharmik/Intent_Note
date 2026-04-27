@@ -108,9 +108,18 @@ function startServer(getWindow) {
       res.writeHead(403); res.end(); return
     }
     res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'POST, PATCH, OPTIONS')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+
+    if (req.method === 'GET' && req.url === '/captures') {
+      const rows = db.prepare(
+        'SELECT * FROM captures WHERE deleted_at IS NULL ORDER BY saved_at DESC'
+      ).all().map(rowToCapture)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(rows))
+      return
+    }
 
     let body = ''
     req.on('data', chunk => { body += chunk })

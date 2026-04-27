@@ -1,4 +1,4 @@
-import { fetchCaptures, patchCapture, isConfigured } from "./supabase.js";
+import { fetchCaptures, patchCapture } from "./supabase.js";
 import { distill, reclassify, loadSettings, saveSettings } from "./llm.js";
 import { exportSingle, exportBulkZip } from "./export.js";
 import {
@@ -36,18 +36,7 @@ async function boot() {
     window.electronBridge.onSettingsFromExtension((data) => {
       const s = loadSettings();
       saveSettings({ ...s, supabaseUrl: data.supabaseUrl || s.supabaseUrl, supabaseAnonKey: data.supabaseAnonKey || s.supabaseAnonKey });
-      if (!isConfigured()) boot();
     });
-  }
-
-  if (!isConfigured()) {
-    mainEl.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">◆</div>
-        <p class="empty-title">Supabase not configured</p>
-        <p class="empty-sub">Open Settings (⚙) and enter your Supabase URL and anon key under Sync.</p>
-      </div>`;
-    return;
   }
 
   try {
