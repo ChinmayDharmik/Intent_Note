@@ -87,6 +87,11 @@ function syncToLocal(capture) {
   }).catch(() => {});
 }
 
+async function replayCapturesToLocal() {
+  const captures = await getCaptures();
+  captures.forEach(c => syncToLocal(c));
+}
+
 function softDeleteLocal(id) {
   fetch(`http://localhost:47832/captures/${encodeURIComponent(id)}`, {
     method: "PATCH",
@@ -264,7 +269,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         updateCapture(addId, (c) => {
           c.tags = c.tags || [];
           if (!c.tags.includes(normalized)) c.tags.push(normalized);
-        }).then(() => sendResponse({ success: true }));
+        }).then(async () => {
+          const all = await getCaptures();
+          const updated = all.find((c) => c.id === addId);
+          if (updated) syncToLocal(updated);
+          sendResponse({ success: true });
+        });
       } else {
         sendResponse({ success: true });
       }
@@ -275,7 +285,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const { id: removeId, tag: removeTag } = message.payload;
       updateCapture(removeId, (c) => {
         c.tags = (c.tags || []).filter((t) => t !== removeTag);
-      }).then(() => sendResponse({ success: true }));
+      }).then(async () => {
+        const all = await getCaptures();
+        const updated = all.find((c) => c.id === removeId);
+        if (updated) syncToLocal(updated);
+        sendResponse({ success: true });
+      });
       return true;
     }
 
@@ -310,7 +325,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }).then(async () => {
         const all = await getCaptures();
         const updated = all.find((c) => c.id === editId);
-        if (updated) syncToSupabase(updated).catch(() => {});
+        if (updated) {
+          syncToLocal(updated);
+          syncToSupabase(updated).catch(() => {});
+        }
         sendResponse({ success: true });
       });
       return true;
@@ -366,3 +384,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     console.error("[Intent] Shortcut failed:", err);
   }
 });
+
+// On every service worker startup, push all local captures to the Electron app.
+// INSERT OR REPLACE makes this idempotent — safe to run every time.
+replayCapturesToLocal();
