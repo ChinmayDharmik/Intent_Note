@@ -181,6 +181,11 @@ async function handleEdit(captureId, fields) {
 
 async function runDistillation(capture, distillEl) {
   try {
+    if (capture.distillation?.length) {
+      distillEl.innerHTML = buildDistillHTML(capture.distillation);
+      return;
+    }
+
     const bullets = await distill(capture);
 
     if (!bullets || !bullets.length) {

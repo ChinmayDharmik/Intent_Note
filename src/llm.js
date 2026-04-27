@@ -58,33 +58,13 @@ export async function classify(text, url, pageTitle, settings) {
 // ─── Prompt ────────────────────────────────────────────────────────────────────
 
 function buildPrompt(text, url, pageTitle) {
-  return `You are a classification engine. Analyse the input and return ONLY a JSON object — no markdown fences, no explanation, nothing else.
+  return `Classify the captured text. Return ONLY valid JSON, no markdown.
 
-Input:
-- Selected text: "${text.slice(0, 300)}"
-- Page URL: "${url}"
-- Page title: "${pageTitle}"
+Schema: {"intent":"book|movie|article|idea|quote|product|recipe|other","title":"concise title","reason":"one sentence why this mattered","extract":"key phrase or sentence","tags":["3-5 lowercase tags"]}
 
-Classify the intent as exactly one of: book, movie, article, idea, quote, product, recipe, other.
-
-Use these signals:
-- book: book title, author name, "worth reading", ISBN, "by [Author]"
-- movie: film title, director, streaming platform, "watch", "cinema"
-- article: news, blog post, essay, "read later", byline, publication name
-- idea: concept, framework, mental model, insight, "think about"
-- quote: memorable sentence, attributed phrase, "said", quotation marks
-- product: app, tool, software, hardware, SaaS, "try this"
-- recipe: food, ingredients, cooking, dish name, cuisine
-- other: does not clearly fit any above
-
-Return this exact JSON shape and nothing else:
-{
-  "intent": "<one of the 8 types>",
-  "title": "<extracted or inferred title, max 60 chars>",
-  "reason": "<one sentence: why this was worth saving, max 120 chars>",
-  "extract": "<the most important fact or phrase from the text, max 100 chars>",
-  "tags": ["<3 to 5 short descriptive lowercase tags, e.g. 'psychology', 'decision-making', 'nonfiction'>"]
-}`;
+Text: "${text.slice(0, 300)}"
+URL: "${url}"
+Page: "${pageTitle}"`;
 }
 
 // ─── API Calls ─────────────────────────────────────────────────────────────────
@@ -192,7 +172,7 @@ async function callAnthropic(prompt, apiKey) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 300,
         messages: [{ role: "user", content: prompt }],
       }),

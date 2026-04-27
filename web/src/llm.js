@@ -26,11 +26,11 @@ export async function reclassify(capture) {
   const settings = loadSettings();
   const text = capture.raw_text || capture.extract || capture.title || "";
 
-  const prompt = `You are an intent classifier. Given the captured text below, return ONLY a JSON object — no markdown, no explanation.
+  const prompt = `Classify the captured text. Return ONLY valid JSON, no markdown.
 
-JSON shape: {"intent":"<book|movie|article|idea|quote|product|recipe|other>","title":"<concise title>","reason":"<one sentence why this mattered>","extract":"<key sentence or phrase>","tags":["3 to 5 short descriptive lowercase tags"]}
+Schema: {"intent":"book|movie|article|idea|quote|product|recipe|other","title":"concise title","reason":"one sentence why this mattered","extract":"key phrase or sentence","tags":["3-5 lowercase tags"]}
 
-Text: ${text.slice(0, 600)}
+Text: ${text.slice(0, 400)}
 URL: ${capture.url || ""}`;
 
   let raw = "";
@@ -66,7 +66,7 @@ async function classifyAnthropic(prompt, apiKey) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 300, messages: [{ role: "user", content: prompt }] }),
+    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
   });
   if (!res.ok) throw new Error(`Anthropic ${res.status}`);
   const data = await res.json();
@@ -102,12 +102,10 @@ export async function distill(capture) {
   const settings = loadSettings();
   const text = capture.extract || capture.raw_text || capture.title || "";
 
-  const prompt = `Distill this captured content into exactly 3 bullet points capturing the core ideas.
+  const prompt = `Extract exactly 3 key insights. Return ONLY valid JSON: {"bullets":["...","...","..."]}
 
 Title: ${capture.title || "Untitled"}
-Text: ${text.slice(0, 800)}
-
-Return JSON only, no other text: {"bullets": ["...", "...", "..."]}`;
+Text: ${text.slice(0, 500)}`;
 
   if (settings.provider === "anthropic") {
     if (!settings.anthropicApiKey) throw new Error("Anthropic API key not configured");
