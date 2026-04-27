@@ -2,160 +2,187 @@
 
 A Chrome extension that captures **why** something mattered, not just what you saved.
 
-Highlight text on any page, press a shortcut, and Intent classifies it — book, article, idea, quote, and more — and records your reason. Powered by on-device AI, a local LLM, or a cloud API.
+Highlight text on any page → press a shortcut → an LLM classifies it, writes a reason, suggests tags, and stores it locally. A companion Electron desktop app reads captures in real-time from a local SQLite database — no cloud account, no hosting, no data leaving your machine.
+
+---
+
+## How it works
+
+```
+Browser tab
+  │  Ctrl+Shift+S (selection or active page)
+  ▼
+Extension service worker
+  │  LLM classify (Anthropic / Gemini / LM Studio)
+  │  → chrome.storage.local   (offline-first)
+  │  → POST localhost:47832/captures  (fire-and-forget)
+  ▼
+Electron main process
+  │  SQLite INSERT … ON CONFLICT DO UPDATE  (idempotent)
+  │  → IPC push "captures-updated"
+  ▼
+Dashboard renderer
+  └  Re-fetches SQLite → updates grid instantly
+```
+
+The HTTP server on `localhost:47832` is the only bridge between the browser extension and the desktop app. The extension pushes every capture and replays all of `chrome.storage.local` on each service worker startup as a catch-up mechanism. Supabase is an optional secondary sync layer — the system is fully functional without it.
 
 ---
 
 ## Features
 
-- **Shortcut capture** — select text, press `Ctrl+Shift+S` (`Cmd+Shift+S` on Mac)
-- **Quick capture** — type a thought directly in the popup
-- **Page link toggle** — optionally attach the current URL to any capture
-- **Intent classification** — LLM auto-tags each capture (8 categories) with a title and reason
-- **Auto-tags** — LLM suggests conceptual tags; add or remove them inline
-- **Filter tabs** — browse by intent category with live counts
-- **Tag cloud** — filter by any conceptual tag across your feed
-- **Search** — full-text filter across titles, reasons, and raw text
-- **Edit captures** — update title, reason, intent, or tags after saving; re-classify with one click
-- **Export** — download all captures as JSON or Markdown
-- **Sync** — optional Supabase sync so captures appear on the companion web dashboard
-- Stores everything locally in `chrome.storage.local` — no account required
+**Extension**
+- Shortcut capture — select text, press `Ctrl+Shift+S` (`Cmd+Shift+S` on Mac)
+- Quick capture — type directly in the popup
+- LLM classification — auto-assigns intent (8 categories), title, reason, extract, and 3–5 tags
+- Inline tag editor — add or remove tags after saving
+- Filter tabs and tag cloud — browse by intent or tag
+- Search — full-text across titles, reasons, and raw text
+- Edit captures — update title, reason, intent, or tags; re-classify with one click
+- Export — JSON or Markdown
+
+**Desktop dashboard**
+- Real-time sync — new captures appear within seconds via IPC push, no polling
+- Distillation — LLM extracts 3 key insights on demand; result cached per capture
+- Delete — soft-delete from detail view, reflected immediately in the grid
+- Edit and re-classify — same as extension, changes synced back to SQLite
+- Links open in the system default browser
+- Export all or individual captures as Markdown
 
 ---
 
-## Install (no store required)
+## Quick start
 
-Chrome extensions can be loaded directly from your file system in seconds.
+### 1. Load the Chrome extension
 
-### Step-by-step
+```
+chrome://extensions  →  Developer mode ON  →  Load unpacked  →  select repo root
+```
 
-1. **Download the extension**
+Pin the ◆ icon. Open **Settings (⚙)** and choose a provider (see [Configuration](#configuration)).
 
-   - **Git:** `git clone https://github.com/ChinmayDharmik/Intent_Note.git`
-   - **ZIP:** click **Code → Download ZIP** on GitHub, then unzip it
+### 2. Run the desktop app
 
-2. **Open Chrome extensions page**
+```bash
+cd web
+npm install
+npm run electron      # builds Vite output then opens in Electron
+```
 
-   Paste this into your address bar and press Enter:
-   ```
-   chrome://extensions
-   ```
+The app starts the HTTP server on `localhost:47832`. Captures you made before opening the app will be replayed automatically when the extension service worker next starts (e.g. on the next capture).
 
-3. **Enable Developer mode**
+### 3. Capture something
 
-   Toggle **Developer mode** on (top-right corner of the extensions page).
-
-4. **Load the extension**
-
-   Click **Load unpacked** → navigate to the downloaded/cloned folder → select it.
-
-   The Intent icon (◆) will appear in your toolbar. Pin it for easy access.
-
-5. **Configure your LLM backend**
-
-   Click the ◆ icon → click ⚙ (Settings) → choose a provider and enter your key (see [Configuration](#configuration) below).
-
-> **Updates:** When you pull new changes, go back to `chrome://extensions` and click the **↻ reload** icon on the Intent card.
+Select text on any page and press `Ctrl+Shift+S`. A toast shows the classification status. Open the desktop app — the capture appears in real-time.
 
 ---
 
 ## Configuration
 
-Open Settings (⚙ in the popup header). Choose one provider:
+Open **Settings (⚙)** in the popup. All values are stored locally — never sent anywhere except your chosen provider's API.
 
-| Provider | What it needs | Notes |
+### LLM provider
+
+| Provider | What you need | Notes |
 |----------|--------------|-------|
-| **Gemini Nano** *(default)* | Nothing | Runs fully on-device. Requires Chrome 127+ with Built-in AI enabled. Falls back to Gemini Cloud if unavailable. |
-| **Gemini Cloud** | Gemini API key (`AIza…`) | Get one free at [aistudio.google.com](https://aistudio.google.com) |
-| **Anthropic** | Anthropic API key (`sk-ant-…`) | Get one at [console.anthropic.com](https://console.anthropic.com) |
-| **LM Studio** | Running LM Studio instance | Set base URL (default `http://localhost:1234/v1`). Enable CORS in LM Studio → Local Server. |
-
-All keys are stored locally in `chrome.storage.sync` — never sent anywhere except the chosen provider's API.
+| **Anthropic** | API key (`sk-ant-…`) | [console.anthropic.com](https://console.anthropic.com) |
+| **Gemini Cloud** | API key (`AIza…`) | [aistudio.google.com](https://aistudio.google.com) — free tier available |
+| **LM Studio** | Running LM Studio instance | Set base URL (default `http://localhost:1234/v1`). Enable CORS in LM Studio. |
 
 ### Optional: Supabase sync
 
-To sync captures to the companion web dashboard, add your Supabase project URL and anon key in the Sync section of Settings. Leave blank to disable.
+Add your Supabase project URL and anon key under **Sync** in Settings. Captures will be pushed to Supabase in addition to the local database. The desktop app will also use Supabase as a read source when running outside Electron.
+
+---
+
+## Architecture
+
+### Data flow
+
+| Event | Extension | Electron |
+|-------|-----------|----------|
+| New capture | `chrome.storage.local` + `POST /captures` | Upsert SQLite; push `captures-updated` IPC |
+| Edit / tag change | Update local + `POST /captures` (full upsert) | Same upsert path |
+| Delete | — | `SET deleted_at = now()`; remove from grid |
+| SW restart | `replayCapturesToLocal()` — full replay | `COALESCE(existing.deleted_at, incoming.deleted_at)` preserves soft-deletes |
+| Dashboard open (Electron) | — | `ipcRenderer.invoke('get-captures')` → SQLite |
+| Dashboard open (browser) | — | `fetch('localhost:47832/captures')` → same SQLite via HTTP |
+
+### Why a local HTTP server?
+
+Chrome extensions cannot use native messaging without a host manifest installed on the OS. A lightweight `http.createServer` on `127.0.0.1:47832` is the simplest zero-install bridge:
+
+- Extension pushes via `fetch` with `.catch(() => {})` — never blocks a capture
+- Electron reads via IPC (inside the app) or HTTP (browser dev mode)
+- Socket-level IP check (`127.0.0.1` / `::1`) rejects any non-loopback request before any parsing
+
+### Idempotent replay
+
+The MV3 service worker is ephemeral — terminated after ~30 s of inactivity and restarted on demand. `replayCapturesToLocal()` runs at every module load and pushes the full `chrome.storage.local` array to SQLite. The upsert query uses:
+
+```sql
+ON CONFLICT(id) DO UPDATE SET
+  intent = excluded.intent, title = excluded.title, …,
+  deleted_at = COALESCE(captures.deleted_at, excluded.deleted_at)
+```
+
+`COALESCE` ensures a soft-delete set from the dashboard survives a replay (the extension never sets `deleted_at`, so `excluded.deleted_at` is always `null` — the existing value wins).
+
+### SQLite via `node:sqlite`
+
+Uses Node 22's built-in `node:sqlite` (`DatabaseSync`) — no native add-on, no `node-gyp`, no version pinning. Schema is created on first launch; adding new columns uses `try { ALTER TABLE … ADD COLUMN }` so existing databases migrate silently.
 
 ---
 
 ## Project structure
 
 ```
-intent/
+intent/                         Chrome extension
 ├── manifest.json
-├── popup.html              # Extension popup
-├── settings.html           # Settings page
-├── privacy-policy.html
-├── icons/
+├── popup.html
+├── settings.html
 └── src/
-    ├── background.js       # Service worker — routing, storage, Supabase sync
-    ├── content.js          # Toast notifications, selection script
-    ├── llm.js              # LLM adapter (Gemini Nano / Cloud, Anthropic, LM Studio)
-    ├── popup.js            # Popup UI — feed, filter, quick capture, tags, export
-    ├── popup.css
-    ├── settings.js         # Settings UI — provider toggle, keys, sync
-    ├── settings.css
-    ├── fonts.css           # Local @font-face declarations
-    └── fonts/              # Bundled Manrope + Noto Serif (no CDN)
-        ├── manrope-*.ttf
-        └── noto-serif-*.ttf
-```
+    ├── background.js           Service worker — routing, storage, local + Supabase sync
+    ├── content.js              Toast notifications, cached selection
+    ├── llm.js                  LLM adapter (Anthropic / Gemini / LM Studio)
+    ├── popup.js                Popup UI — feed, filter, tags, search, export
+    └── settings.js             Settings UI — provider config, sync keys
 
-### Companion web app (`/web`)
-
-A Vite + vanilla JS dashboard that reads captures from Supabase. Runs as a local Electron desktop app — no hosting required.
-
-```
-web/
-├── electron.cjs        # Electron main process
-├── vite.config.js
-├── package.json
+web/                            Electron desktop dashboard
+├── electron.cjs                Main process — SQLite, HTTP server on :47832, IPC handlers
+├── preload.cjs                 contextBridge — safe IPC surface for renderer
+├── vite.config.js              base: './' for file:// loading in Electron
 └── src/
-    ├── main.js         # App bootstrap, settings, nav
-    ├── supabase.js     # Supabase client (reads credentials from settings)
-    ├── llm.js          # LLM adapter + settings persistence (localStorage)
-    ├── render.js       # Card, detail, settings panel builders
-    ├── export.js       # JSON / Markdown / ZIP export
+    ├── main.js                 App bootstrap, real-time listener, delete/edit handlers
+    ├── supabase.js             Data source waterfall: electronBridge → :47832 → Supabase
+    ├── llm.js                  LLM adapter + settings persistence (localStorage)
+    ├── render.js               Card, detail view, settings panel, install overlay
+    ├── export.js               JSON / Markdown / ZIP export
     └── style.css
-```
-
-**Run the desktop app:**
-
-```bash
-cd web
-npm install
-npm run electron       # build + open in a desktop window
-```
-
-**Package an installer:**
-
-```bash
-npm run dist           # outputs to web/release/
-```
-
-On first launch, click ⚙ (Settings) and enter your Supabase URL and anon key under **Sync**.
-
-**Dev server (browser):**
-
-```bash
-npm run dev            # Vite dev server at http://localhost:5173
 ```
 
 ---
 
 ## Development
 
-No build step for the extension. Edit files and reload.
+No build step for the extension — edit files, then reload.
 
 ```bash
-# Lint
-npx eslint src/
-
 # Reload after changes
-# chrome://extensions → click ↻ on the Intent card
+# chrome://extensions → ↻ on the Intent card
+
+# Debug service worker
+# chrome://extensions → "Inspect views: service worker"
 ```
 
-**Debug the service worker:** on the extensions page, click **Inspect views: service worker** under the Intent card. All message routing and storage operations log here.
+Desktop app:
+
+```bash
+cd web
+npm run dev        # Vite dev server at localhost:5173 — uses HTTP fallback to local server
+npm run electron   # full build + launch
+npm run dist       # package installer → web/release/
+```
 
 ---
 
@@ -163,9 +190,9 @@ npx eslint src/
 
 | Permission | Why |
 |-----------|-----|
-| `storage` | Save captures and settings locally |
-| `activeTab` | Read the current tab's URL and title on capture |
-| `scripting` | Inject the selection-reading script when shortcut is pressed |
-| `tabs` | Resolve the active tab for the page-link toggle |
+| `storage` | Persist captures and settings locally |
+| `activeTab` | Read URL and title of the current tab on capture |
+| `scripting` | Inject selection-reading script on keyboard shortcut |
+| `tabs` | Resolve the active tab for the shortcut handler |
 
-Host permissions (`<all_urls>`, provider API domains, Supabase) are needed only for the LLM classify call and optional sync — no browsing data is collected.
+`host_permissions` covers `<all_urls>` (required by `scripting`), the chosen LLM API domain, and `localhost:47832`. No browsing data is collected or transmitted.
