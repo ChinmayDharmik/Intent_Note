@@ -40,7 +40,7 @@ The user never types a reason — the LLM infers it from context. The result is 
 
 | Feature | Detail |
 |---------|--------|
-| Keyboard shortcut | `Ctrl+Shift+S` / `Cmd+Shift+S` — works on any page, any selection |
+| Keyboard shortcut | `Ctrl+Alt+S` / `Cmd+Alt+S` — works on any page, any selection |
 | Popup quick-capture | Type a thought directly; attaches current URL |
 | Classification | 8 intent types: book, movie, article, idea, quote, product, recipe, other |
 | Auto-reason | LLM writes a one-sentence "why this mattered" |

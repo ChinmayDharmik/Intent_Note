@@ -589,13 +589,17 @@ kbd {
 
 .tag-cloud {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 5px;
-  padding: 6px 12px 4px;
+  padding: 6px 12px;
   background: var(--surface);
   flex-shrink: 0;
   border-bottom: 1px solid var(--surface-2);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.tag-cloud::-webkit-scrollbar { display: none; }
 
 .tag-cloud-chip {
   padding: 2px 9px;

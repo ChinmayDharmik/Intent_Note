@@ -18,7 +18,7 @@ So I built Intent: select text, press a shortcut, an LLM infers the why and stru
 
 ```
 Browser tab
-  │  Ctrl+Shift+S (selection or active page)
+  │  Ctrl+Alt+S (selection or active page)
   ▼
 Extension service worker
   │  LLM classify (Gemini Nano / Gemini Cloud / Anthropic / LM Studio)
@@ -40,7 +40,7 @@ The HTTP server on `localhost:47832` is the only bridge between browser and desk
 ## Features
 
 **Extension**
-- Shortcut capture — select text, press `Ctrl+Shift+S` (`Cmd+Shift+S` on Mac)
+- Shortcut capture — select text, press `Ctrl+Alt+S` (`Cmd+Alt+S` on Mac)
 - Quick capture — type directly in the popup
 - LLM classification — auto-assigns intent (8 categories), title, reason, extract, and 3–5 tags
 - Inline tag editor — add or remove tags after saving
@@ -81,7 +81,7 @@ The app starts the HTTP server on `localhost:47832`. Captures made before openin
 
 ### 3. Capture something
 
-Select text on any page and press `Ctrl+Shift+S`. A toast shows "Understanding intent…" while the LLM runs. Open the desktop app — the capture appears in real-time.
+Select text on any page and press `Ctrl+Alt+S`. A toast shows "Understanding intent…" while the LLM runs. Open the desktop app — the capture appears in real-time.
 
 ---
 

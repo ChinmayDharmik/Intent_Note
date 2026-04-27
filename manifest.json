@@ -46,8 +46,8 @@
     "commands": {
         "save-selection": {
             "suggested_key": {
-                "default": "Ctrl+Shift+S",
-                "mac": "Command+Shift+S"
+                "default": "Ctrl+Alt+S",
+                "mac": "Command+Alt+S"
             },
             "description": "Save current selection or page"
         }

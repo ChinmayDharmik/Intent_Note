@@ -30,7 +30,7 @@ Structure mirrors Damco's evaluation criteria: problem framing → live demo →
 
 > "The flow: select any text, press the shortcut."
 
-**Screen:** Press `Ctrl+Shift+S`. Toast slides in — spinner with "Understanding intent…"
+**Screen:** Press `Ctrl+Alt+S`. Toast slides in — spinner with "Understanding intent…"
 
 > "In the background: the selected text, the URL, and the page title go to an LLM. By default that's Chrome's built-in Gemini Nano — completely on-device, no API key, no network call. For higher quality output you can swap to Gemini Cloud, Anthropic, or a local LM Studio instance."
 
