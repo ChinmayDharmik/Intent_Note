@@ -1,8 +1,16 @@
 # Intent
 
-A Chrome extension that captures **why** something mattered, not just what you saved.
+A Chrome extension + Electron desktop app that captures **why** something mattered — not just what you saved.
 
-Highlight text on any page → press a shortcut → an LLM classifies it, writes a reason, suggests tags, and stores it locally. A companion Electron desktop app reads captures in real-time from a local SQLite database — no cloud account, no hosting, no data leaving your machine.
+---
+
+## The problem I kept running into
+
+I read a lot. Articles, papers, book excerpts, product pages. I saved all of it — bookmarks, Pocket, Notion clipper, open tabs. Six months later I had hundreds of saved items and no idea why I cared about any of them. The URL and title were there. The context was gone.
+
+The failure isn't storage — it's timing. The *why* is effortless to capture in the 5–10 seconds right after you save something. Miss that window and it's gone. Every tool I found optimised for accumulation. None of them solved the timing problem.
+
+So I built Intent: select text, press a shortcut, an LLM infers the why and structures it immediately.
 
 ---
 
@@ -13,19 +21,19 @@ Browser tab
   │  Ctrl+Shift+S (selection or active page)
   ▼
 Extension service worker
-  │  LLM classify (Anthropic / Gemini / LM Studio)
-  │  → chrome.storage.local   (offline-first)
+  │  LLM classify (Gemini Nano / Gemini Cloud / Anthropic / LM Studio)
+  │  → chrome.storage.local   (offline-first, never blocks)
   │  → POST localhost:47832/captures  (fire-and-forget)
   ▼
 Electron main process
-  │  SQLite INSERT … ON CONFLICT DO UPDATE  (idempotent)
+  │  SQLite INSERT … ON CONFLICT(id) DO UPDATE  (idempotent)
   │  → IPC push "captures-updated"
   ▼
 Dashboard renderer
   └  Re-fetches SQLite → updates grid instantly
 ```
 
-The HTTP server on `localhost:47832` is the only bridge between the browser extension and the desktop app. The extension pushes every capture and replays all of `chrome.storage.local` on each service worker startup as a catch-up mechanism. Supabase is an optional secondary sync layer — the system is fully functional without it.
+The HTTP server on `localhost:47832` is the only bridge between browser and desktop. The extension replays all of `chrome.storage.local` on every service worker restart as a catch-up mechanism. Supabase is an optional secondary sync layer — the system is fully functional without it.
 
 ---
 
@@ -69,29 +77,30 @@ npm install
 npm run electron      # builds Vite output then opens in Electron
 ```
 
-The app starts the HTTP server on `localhost:47832`. Captures you made before opening the app will be replayed automatically when the extension service worker next starts (e.g. on the next capture).
+The app starts the HTTP server on `localhost:47832`. Captures made before opening the app are replayed automatically on the next service worker start.
 
 ### 3. Capture something
 
-Select text on any page and press `Ctrl+Shift+S`. A toast shows the classification status. Open the desktop app — the capture appears in real-time.
+Select text on any page and press `Ctrl+Shift+S`. A toast shows "Understanding intent…" while the LLM runs. Open the desktop app — the capture appears in real-time.
 
 ---
 
 ## Configuration
 
-Open **Settings (⚙)** in the popup. All values are stored locally — never sent anywhere except your chosen provider's API.
+Open **Settings (⚙)** in the popup.
 
 ### LLM provider
 
 | Provider | What you need | Notes |
 |----------|--------------|-------|
-| **Anthropic** | API key (`sk-ant-…`) | [console.anthropic.com](https://console.anthropic.com) |
+| **Gemini Nano** *(default)* | Nothing | Chrome's built-in AI — on-device, no key, no network call |
 | **Gemini Cloud** | API key (`AIza…`) | [aistudio.google.com](https://aistudio.google.com) — free tier available |
-| **LM Studio** | Running LM Studio instance | Set base URL (default `http://localhost:1234/v1`). Enable CORS in LM Studio. |
+| **Anthropic** | API key (`sk-ant-…`) | [console.anthropic.com](https://console.anthropic.com) — uses Haiku |
+| **LM Studio** | Running LM Studio instance | Set base URL (default `http://localhost:1234/v1`). Enable CORS. |
 
 ### Optional: Supabase sync
 
-Add your Supabase project URL and anon key under **Sync** in Settings. Captures will be pushed to Supabase in addition to the local database. The desktop app will also use Supabase as a read source when running outside Electron.
+Add your Supabase URL and anon key under **Sync** in Settings. Captures push to Supabase in addition to SQLite. Not required — the system works completely without it.
 
 ---
 
@@ -110,15 +119,11 @@ Add your Supabase project URL and anon key under **Sync** in Settings. Captures 
 
 ### Why a local HTTP server?
 
-Chrome extensions cannot use native messaging without a host manifest installed on the OS. A lightweight `http.createServer` on `127.0.0.1:47832` is the simplest zero-install bridge:
-
-- Extension pushes via `fetch` with `.catch(() => {})` — never blocks a capture
-- Electron reads via IPC (inside the app) or HTTP (browser dev mode)
-- Socket-level IP check (`127.0.0.1` / `::1`) rejects any non-loopback request before any parsing
+Chrome extensions cannot use native messaging without a host manifest installed on the OS — user setup friction. A `http.createServer` on `127.0.0.1:47832` is the simplest zero-install bridge. The extension pushes via `fetch` with `.catch(() => {})` — a capture is never blocked by a network call. Socket-level IP check (`127.0.0.1` / `::1`) rejects any non-loopback request before any parsing.
 
 ### Idempotent replay
 
-The MV3 service worker is ephemeral — terminated after ~30 s of inactivity and restarted on demand. `replayCapturesToLocal()` runs at every module load and pushes the full `chrome.storage.local` array to SQLite. The upsert query uses:
+The MV3 service worker is ephemeral — terminated after ~30 s and restarted on demand. `replayCapturesToLocal()` runs at every module load. The upsert query:
 
 ```sql
 ON CONFLICT(id) DO UPDATE SET
@@ -126,11 +131,34 @@ ON CONFLICT(id) DO UPDATE SET
   deleted_at = COALESCE(captures.deleted_at, excluded.deleted_at)
 ```
 
-`COALESCE` ensures a soft-delete set from the dashboard survives a replay (the extension never sets `deleted_at`, so `excluded.deleted_at` is always `null` — the existing value wins).
+`COALESCE` ensures a dashboard-side deletion survives a replay. The extension always sends `deleted_at: null`, so the existing value wins whenever it is non-null.
 
 ### SQLite via `node:sqlite`
 
-Uses Node 22's built-in `node:sqlite` (`DatabaseSync`) — no native add-on, no `node-gyp`, no version pinning. Schema is created on first launch; adding new columns uses `try { ALTER TABLE … ADD COLUMN }` so existing databases migrate silently.
+Node 22's built-in `DatabaseSync` — no native add-on, no `node-gyp`, no version pinning. Schema is created on first launch; new columns use `try { ALTER TABLE … ADD COLUMN }` for silent migration.
+
+---
+
+## Design decisions and trade-offs
+
+| Decision | Why | The cost |
+|----------|-----|----------|
+| Local HTTP server over native messaging | Zero install; works on all OS without a host manifest | Port conflict is possible — mitigated by binding to `127.0.0.1` only |
+| `node:sqlite` over `better-sqlite3` | No native add-on, no build step, no platform binaries in installer | Synchronous API only — fine for single-user local use |
+| Soft-delete over hard delete | Replays are idempotent; deletions survive service worker restarts | Deleted rows accumulate; queries need `WHERE deleted_at IS NULL` |
+| Full replay on every SW start | Captures are never lost even if Electron is closed | O(n) upserts on every restart — acceptable at personal-scale volumes |
+| Gemini Nano as default | Zero friction; no key, no external call, fully on-device | Device must support Chrome's built-in AI; graceful fallback to cloud if not |
+| Vanilla JS over React | No runtime dependency; fast to load from `file://` | No component model; DOM manipulation is manual |
+
+---
+
+## What's not working well / honest limitations
+
+- **Full replay is O(n)** — if a user has thousands of captures, the service worker restart sends thousands of HTTP requests. It works at personal scale, but doesn't scale well. The right fix is a high-water-mark or last-synced timestamp so only new captures are replayed.
+- **Extension and dashboard have separate LLM settings** — the extension stores provider config in `chrome.storage.sync`; the dashboard stores it in `localStorage`. Changing one doesn't update the other (except Supabase keys, which do sync). This creates friction when switching providers.
+- **Delete from the extension popup is not wired to the dashboard** — deleting a capture in the extension removes it from `chrome.storage.local` but does not send a soft-delete to the HTTP server. If you delete in the extension and then replay, the capture reappears in the dashboard.
+- **No conflict resolution for edits** — if you edit a capture in the extension and in the dashboard at the same time (unlikely but possible), the last write wins. There is no merge strategy.
+- **Gemini Nano availability is unpredictable** — the built-in AI API availability varies by Chrome version, device, and whether the model has been downloaded. The fallback chain handles it, but the error messages could be clearer.
 
 ---
 
@@ -144,7 +172,7 @@ intent/                         Chrome extension
 └── src/
     ├── background.js           Service worker — routing, storage, local + Supabase sync
     ├── content.js              Toast notifications, cached selection
-    ├── llm.js                  LLM adapter (Anthropic / Gemini / LM Studio)
+    ├── llm.js                  LLM adapter (Gemini Nano / Gemini Cloud / Anthropic / LM Studio)
     ├── popup.js                Popup UI — feed, filter, tags, search, export
     └── settings.js             Settings UI — provider config, sync keys
 
@@ -165,12 +193,9 @@ web/                            Electron desktop dashboard
 
 ## Development
 
-No build step for the extension — edit files, then reload.
+No build step for the extension — edit files, reload the extension card.
 
 ```bash
-# Reload after changes
-# chrome://extensions → ↻ on the Intent card
-
 # Debug service worker
 # chrome://extensions → "Inspect views: service worker"
 ```
