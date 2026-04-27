@@ -28,10 +28,7 @@ async function boot() {
       <div class="empty">
         <div class="empty-icon">◆</div>
         <p class="empty-title">Supabase not configured</p>
-        <p class="empty-sub">
-          Create <code>web/.env.local</code> with:<br>
-          <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>
-        </p>
+        <p class="empty-sub">Open Settings (⚙) and enter your Supabase URL and anon key under Sync.</p>
       </div>`;
     return;
   }

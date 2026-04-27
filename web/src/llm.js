@@ -6,6 +6,8 @@ const DEFAULTS = {
   geminiApiKey: "",
   lmstudioBaseUrl: "http://localhost:1234/v1",
   lmstudioModel: "local-model",
+  supabaseUrl: "",
+  supabaseAnonKey: "",
 };
 
 export function loadSettings() {
