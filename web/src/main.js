@@ -1,4 +1,4 @@
-import { fetchCaptures, patchCapture } from "./supabase.js";
+import { fetchCaptures, patchCapture, deleteCapture } from "./supabase.js";
 import { distill, reclassify, loadSettings, saveSettings } from "./llm.js";
 import { exportSingle, exportBulkZip } from "./export.js";
 import {
@@ -37,6 +37,23 @@ async function boot() {
       const s = loadSettings();
       saveSettings({ ...s, supabaseUrl: data.supabaseUrl || s.supabaseUrl, supabaseAnonKey: data.supabaseAnonKey || s.supabaseAnonKey });
     });
+    window.electronBridge.onCapturesUpdated(async () => {
+      captures = await fetchCaptures();
+      buildNav();
+      renderGrid();
+    });
+  } else {
+    // Poll every 5 s when running in a browser alongside the desktop app
+    setInterval(async () => {
+      try {
+        const fresh = await fetchCaptures();
+        if (fresh.length !== captures.length) {
+          captures = fresh;
+          buildNav();
+          renderGrid();
+        }
+      } catch {}
+    }, 5000);
   }
 
   try {
@@ -152,11 +169,19 @@ function openDetail(capture) {
     (distillEl) => runDistillation(capture, distillEl),
     () => exportSingle(capture),
     (id, fields) => handleEdit(id, fields),
-    (cap) => reclassify(cap)
+    (cap) => reclassify(cap),
+    (id) => handleDelete(id),
   );
   mainEl.innerHTML = "";
   mainEl.appendChild(el);
   mainEl.scrollTop = 0;
+}
+
+async function handleDelete(captureId) {
+  await deleteCapture(captureId);
+  captures = captures.filter(c => c.id !== captureId);
+  buildNav();
+  renderGrid();
 }
 
 async function handleEdit(captureId, fields) {

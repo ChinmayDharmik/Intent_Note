@@ -654,6 +654,19 @@ html, body {
 
 .edit-md-btn:hover { color: var(--text-2); }
 
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.15s;
+}
+.delete-btn:hover { color: #e05555; }
+
 .detail-edit-form {
   display: flex;
   flex-direction: column;

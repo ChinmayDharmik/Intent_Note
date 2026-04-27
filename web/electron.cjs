@@ -66,10 +66,22 @@ function upsertCapture(capture) {
     distillation: capture.distillation ? JSON.stringify(capture.distillation) : null,
   }
   db.prepare(`
-    INSERT OR REPLACE INTO captures
+    INSERT INTO captures
       (id, intent, title, reason, extract, tags, raw_text, url, page_title, saved_at, deleted_at, distillation)
     VALUES
       (:id, :intent, :title, :reason, :extract, :tags, :raw_text, :url, :page_title, :saved_at, :deleted_at, :distillation)
+    ON CONFLICT(id) DO UPDATE SET
+      intent      = excluded.intent,
+      title       = excluded.title,
+      reason      = excluded.reason,
+      extract     = excluded.extract,
+      tags        = excluded.tags,
+      raw_text    = excluded.raw_text,
+      url         = excluded.url,
+      page_title  = excluded.page_title,
+      saved_at    = excluded.saved_at,
+      distillation = excluded.distillation,
+      deleted_at  = COALESCE(captures.deleted_at, excluded.deleted_at)
   `).run(row)
 }
 
@@ -88,6 +100,10 @@ ipcMain.handle('get-captures', () => {
   return db.prepare(
     'SELECT * FROM captures WHERE deleted_at IS NULL ORDER BY saved_at DESC'
   ).all().map(rowToCapture)
+})
+
+ipcMain.handle('delete-capture', (_, id) => {
+  db.prepare(`UPDATE captures SET deleted_at = ? WHERE id = ?`).run(new Date().toISOString(), id)
 })
 
 ipcMain.handle('patch-capture', (_, id, data) => {
@@ -136,6 +152,8 @@ function startServer(getWindow) {
 
         if (req.method === 'POST' && req.url === '/captures') {
           upsertCapture(data)
+          const win = getWindow()
+          if (win) win.webContents.send('captures-updated')
           res.writeHead(200); res.end('{"ok":true}'); return
         }
 

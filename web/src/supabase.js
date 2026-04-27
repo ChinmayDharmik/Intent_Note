@@ -24,6 +24,21 @@ export async function fetchCaptures() {
   return fetchFromSupabase();
 }
 
+export async function deleteCapture(id) {
+  if (typeof window !== 'undefined' && window.electronBridge) {
+    return window.electronBridge.deleteCapture(id);
+  }
+  try {
+    const res = await fetch(`${LOCAL_URL}/captures/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deleted_at: new Date().toISOString() }),
+    });
+    if (res.ok) return;
+  } catch {}
+  return patchInSupabase(id, { deleted_at: new Date().toISOString() });
+}
+
 export async function patchCapture(id, data) {
   if (typeof window !== 'undefined' && window.electronBridge) {
     return window.electronBridge.patchCapture(id, data);

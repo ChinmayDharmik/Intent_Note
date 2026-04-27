@@ -6,4 +6,6 @@ contextBridge.exposeInMainWorld('electronBridge', {
   openExtensionFolder:       () => ipcRenderer.invoke('open-extension-folder'),
   getCaptures:               () => ipcRenderer.invoke('get-captures'),
   patchCapture:              (id, data) => ipcRenderer.invoke('patch-capture', id, data),
+  deleteCapture:             (id) => ipcRenderer.invoke('delete-capture', id),
+  onCapturesUpdated:         (cb) => ipcRenderer.on('captures-updated', () => cb()),
 })

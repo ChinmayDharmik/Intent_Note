@@ -61,7 +61,7 @@ export function buildCard(capture, index, onClick, onTagFilter) {
 
 const DETAIL_INTENT_OPTIONS = ["book", "movie", "article", "idea", "quote", "product", "recipe", "other"];
 
-export function buildDetailView(capture, onBack, onDistill, onExport, onEdit, onReclassify) {
+export function buildDetailView(capture, onBack, onDistill, onExport, onEdit, onReclassify, onDelete) {
   const meta = INTENT_META[capture.intent] || INTENT_META.other;
   const el = document.createElement("div");
   el.className = "detail";
@@ -74,6 +74,7 @@ export function buildDetailView(capture, onBack, onDistill, onExport, onEdit, on
       <div class="detail-header-actions">
         ${onEdit ? `<button class="edit-md-btn" id="editBtn">✎ Edit</button>` : ""}
         ${onExport ? `<button class="export-md-btn" id="exportMdBtn">↓ Export .md</button>` : ""}
+        ${onDelete ? `<button class="delete-btn" id="deleteBtn">✕ Delete</button>` : ""}
       </div>
     </div>
     <div class="detail-content" id="detailContent">
@@ -91,6 +92,9 @@ export function buildDetailView(capture, onBack, onDistill, onExport, onEdit, on
 
   el.querySelector("#backBtn").addEventListener("click", onBack);
   if (onExport) el.querySelector("#exportMdBtn").addEventListener("click", onExport);
+  if (onDelete) {
+    el.querySelector("#deleteBtn").addEventListener("click", () => onDelete(capture.id));
+  }
 
   if (onEdit) {
     const contentSection = el.querySelector("#detailContent");
