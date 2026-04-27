@@ -338,6 +338,42 @@ export function buildSettingsPanel(settings, onSave, onClose) {
   return el;
 }
 
+// ─── Install Extension Overlay ────────────────────────────────────────────────
+
+export function buildInstallOverlay(onClose) {
+  const el = document.createElement("div");
+  el.className = "settings-overlay";
+  el.innerHTML = `
+    <div class="settings-panel">
+      <div class="settings-header">
+        <h2 class="settings-title">Install Chrome Extension</h2>
+        <button class="icon-btn" id="installClose">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="settings-body">
+        <ol style="margin:0;padding-left:20px;line-height:2">
+          <li>Click <strong>Open Folder</strong> below — it opens the extension files in Explorer</li>
+          <li>In Chrome, go to <code>chrome://extensions</code></li>
+          <li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
+          <li>Click <strong>Load unpacked</strong> and select the opened folder</li>
+        </ol>
+      </div>
+      <div class="settings-footer">
+        <button class="save-btn-wide" id="installOpenFolder">Open Folder</button>
+      </div>
+    </div>
+  `;
+  el.querySelector("#installClose").addEventListener("click", onClose);
+  el.addEventListener("click", (e) => { if (e.target === el) onClose(); });
+  el.querySelector("#installOpenFolder").addEventListener("click", () => {
+    window.electronBridge?.openExtensionFolder();
+  });
+  return el;
+}
+
 // ─── Nav Item ─────────────────────────────────────────────────────────────────
 
 export function buildNavItem(label, filter, count, isActive, onClick) {

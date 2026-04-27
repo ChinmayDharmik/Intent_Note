@@ -115,6 +115,13 @@ saveBtn.addEventListener("click", async () => {
     const settings = buildSettings();
     await chrome.storage.sync.set({ [STORAGE_KEY]: settings });
     showStatus("Settings saved.", "success");
+    if (settings.supabaseUrl && settings.supabaseAnonKey) {
+      fetch("http://localhost:47832/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supabaseUrl: settings.supabaseUrl, supabaseAnonKey: settings.supabaseAnonKey }),
+      }).catch(() => {});
+    }
   } catch (err) {
     showStatus("Failed to save: " + err.message, "error");
   } finally {
