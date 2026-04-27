@@ -27,7 +27,7 @@ export function isConfigured() {
 export async function fetchCaptures() {
   const { base } = getConfig();
   const res = await fetch(
-    `${base}/rest/v1/captures?select=id,intent,title,reason,extract,tags,saved_at,url,page_title,distillation&deleted_at=is.null&order=saved_at.desc`,
+    `${base}/rest/v1/captures?deleted_at=is.null&order=saved_at.desc`,
     { headers: headers() }
   );
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text().catch(() => "")}`);
