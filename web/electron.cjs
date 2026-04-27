@@ -186,6 +186,18 @@ function createWindow() {
     },
   })
   mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'))
+
+  // Open all external links in the default system browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
+  })
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow.webContents.getURL()) {
+      event.preventDefault()
+      shell.openExternal(url)
+    }
+  })
 }
 
 app.whenReady().then(() => {
