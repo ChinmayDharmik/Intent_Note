@@ -67,6 +67,34 @@ async function updateCapture(id, mutate) {
 
 // ─── Supabase Sync ─────────────────────────────────────────────────────────────
 
+function syncToLocal(capture) {
+  fetch("http://localhost:47832/captures", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id:         capture.id,
+      intent:     capture.intent,
+      title:      capture.title,
+      reason:     capture.reason,
+      extract:    capture.extract,
+      tags:       capture.tags || [],
+      raw_text:   capture.rawText,
+      url:        capture.url,
+      page_title: capture.pageTitle,
+      saved_at:   capture.savedAt,
+      deleted_at: null,
+    }),
+  }).catch(() => {});
+}
+
+function softDeleteLocal(id) {
+  fetch(`http://localhost:47832/captures/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deleted_at: new Date().toISOString() }),
+  }).catch(() => {});
+}
+
 async function syncToSupabase(capture) {
   const settings = await loadSettings();
   if (!settings.supabaseUrl || !settings.supabaseAnonKey) return;
@@ -170,6 +198,9 @@ async function handleSave(payload, sendResponse) {
 
     await saveCapture(capture);
 
+    // Sync to local Electron app (fire-and-forget)
+    syncToLocal(capture);
+
     // Async Supabase sync — does not block capture or toast
     setSyncStatus("syncing").catch(() => {});
     syncToSupabase(capture)
@@ -218,6 +249,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case "DELETE_CAPTURE":
       deleteCapture(message.payload.id).then(() => {
+        softDeleteLocal(message.payload.id);
         softDeleteInSupabase(message.payload.id).catch((err) =>
           console.warn("[Intent] Supabase soft-delete failed:", err.message)
         );
