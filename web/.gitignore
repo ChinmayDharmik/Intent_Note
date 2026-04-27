@@ -1,3 +1,26 @@
+# Dependencies
 node_modules/
+
+# Vite build output
 dist/
+
+# Electron-builder output
+release/
+
+# SQLite database (created at runtime in userData, but guard against local copies)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+npm-debug.log*
+*.log
+
+# Env / secrets
+.env
 .env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db

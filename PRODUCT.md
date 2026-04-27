@@ -74,7 +74,7 @@ The user never types a reason — the LLM infers it from context. The result is 
 
 **Local-first.** Every capture is stored in `chrome.storage.local` before any async work. The LLM call, local HTTP push, and Supabase sync are all fire-and-forget — a network failure never loses a capture.
 
-**No required accounts.** The extension works with any of four LLM providers (including Chrome's built-in Gemini Nano, which requires no key). The desktop app works without Supabase. The only hard requirement is Chrome 124+ for Gemini Nano, or an API key for any cloud provider.
+**No required accounts.** The extension works with any of four LLM providers (including Chrome's built-in Gemini Nano, which requires no key). The desktop app works without Supabase. The only hard requirement is Chrome 127+ for Gemini Nano, or an API key for any cloud provider.
 
 **Zero-infra desktop app.** Electron + `node:sqlite` (Node 22 built-in) means no cloud database, no Docker, no environment variables to manage. The app ships as a single installer.
 
@@ -124,7 +124,7 @@ Haiku is used when Anthropic is selected — classification is a narrow structur
 | Decision | Why | Tradeoff |
 |----------|-----|----------|
 | Local HTTP server over native messaging | Zero install on user's machine; no OS manifest required | Port conflict possible (mitigated by `127.0.0.1` binding only) |
-| `node:sqlite` over `better-sqlite3` | No native add-on, no build step, works in any Electron 41+ | Synchronous API only — acceptable for local single-user use |
+| `node:sqlite` over `better-sqlite3` | No native add-on, no build step, requires Electron 41+ | Synchronous API only — acceptable for local single-user use |
 | Soft-delete over hard delete | Replay idempotency; deletions survive SW restarts | Deleted rows accumulate; all queries need `WHERE deleted_at IS NULL` |
 | Full replay on every SW start | Captures never lost even if Electron is closed | O(n) upserts on every restart — fine at personal scale, breaks at thousands |
 | Gemini Nano as default | No friction, no key, fully on-device | Availability varies by device/Chrome version; fallback chain required |

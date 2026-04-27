@@ -5,16 +5,20 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Editor
 .vscode/
 .idea/
 *.suo
 *.user
+*.swp
+*.swo
 
 # Extension packaging
 *.zip
@@ -24,17 +28,19 @@ Thumbs.db
 # Env / secrets
 .env
 .env.local
+.env*.local
 
+# Claude / internal
 .claude/
 .claudeignore
 
-# Internal dev docs
+# Internal dev docs (not for public repo)
 CLAUDE.md
 MASTER_BRIEF.md
 STATE_LEDGER.md
 arch.md
 intent-prd.md
-intent-prd V2.md
+"intent-prd V2.md"
 
 # Store / distribution assets
 store/

@@ -602,6 +602,7 @@ kbd {
 .tag-cloud::-webkit-scrollbar { display: none; }
 
 .tag-cloud-chip {
+  flex-shrink: 0;
   padding: 2px 9px;
   background: var(--surface-2);
   border: none;

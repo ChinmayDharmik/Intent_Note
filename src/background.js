@@ -386,5 +386,5 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 // On every service worker startup, push all local captures to the Electron app.
-// INSERT OR REPLACE makes this idempotent — safe to run every time.
+// ON CONFLICT(id) DO UPDATE makes this idempotent — safe to run every time.
 replayCapturesToLocal();
