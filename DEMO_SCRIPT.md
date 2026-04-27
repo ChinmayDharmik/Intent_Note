@@ -20,9 +20,11 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 > "Select any text and press the shortcut."
 
-**Screen:** Toast slides in — "Classifying…" then "Saved — Article."
+**Screen:** Toast slides in from bottom-right — a spinner with "Understanding intent…". A moment later it swaps to a success toast: intent emoji, inferred title in bold, inferred reason below it in muted text.
 
 > "In the background, the selected text, the URL, and the page title go to an LLM. It classifies the intent, writes a title, infers a one-sentence reason why this mattered, and suggests tags. Everything happens in about two seconds."
+
+> "By default Intent uses Chrome's built-in Gemini Nano — completely on-device, no API key, no network call. If you want cloud quality, switch to Gemini Cloud, Anthropic, or a local LM Studio instance in Settings."
 
 **Screen:** Click the extension icon. Show the capture in the popup with its intent badge, title, reason, and tags.
 
@@ -38,7 +40,7 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 > "The server writes to SQLite, then sends an IPC event to the renderer. The grid updates immediately."
 
-**Screen:** Pan across the dashboard. Show cards with different intent categories (article, book, idea, quote). Click the filter rail — "Books" — grid filters.
+**Screen:** Pan across the dashboard. Show cards with different intent categories (article, book, idea, quote). Click the filter rail — "📚 Books" — grid filters.
 
 > "Cards are grouped by intent. Click a filter — you're browsing only your book captures. Click a tag in the sidebar — cross-intent tag filter."
 
@@ -50,7 +52,7 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 > "Every capture links back to the source. Click the link — it opens in your default browser, not a new Electron window."
 
-**Screen:** The distillation section is already loading. Three bullet points appear.
+**Screen:** The distillation section shows a spinner with "Distilling…". Three bullet points appear.
 
 > "Distillation runs an LLM pass to extract three key insights. The result is cached in SQLite — it never re-runs for the same capture."
 
@@ -76,9 +78,9 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 > "The only bridge is a plain HTTP server on `localhost:47832`. The extension uses `fetch` — a standard browser API — to push captures. The server checks the socket address and rejects anything that isn't loopback."
 
-> "The service worker is ephemeral — it gets killed after 30 seconds of inactivity. So on every restart, it replays the entire local capture list to SQLite. INSERT OR CONFLICT DO UPDATE means that's safe to run any number of times."
+> "The service worker is ephemeral — it gets killed after 30 seconds of inactivity. So on every restart, it replays the entire local capture list to SQLite. `ON CONFLICT(id) DO UPDATE` makes that safe to run any number of times."
 
-> "Supabase is optional — if you configure it, captures also go there. But the system works completely without it."
+> "The default LLM is Chrome's built-in Gemini Nano — no API key, no external call, fully on-device. For higher quality output, swap to Gemini Cloud, Anthropic, or LM Studio in settings."
 
 **Screen:** Show the GitHub repo briefly.
 
@@ -88,7 +90,7 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 ## Key talking points (for live demo / Q&A)
 
-- **Why local-first?** Avoids the need for a backend, removes the trust problem, and makes it work offline. The LLM API is the only external dependency — even that can be replaced with LM Studio running locally.
+- **Why local-first?** Avoids the need for a backend, removes the trust problem, and makes it work offline. The default LLM (Gemini Nano) is on-device — no external network call at all. Cloud providers are opt-in.
 
 - **Why a local HTTP server instead of native messaging?** Native messaging requires a host manifest installed on the OS — user setup friction. An HTTP server on loopback is a standard API that works everywhere with zero install.
 
@@ -96,4 +98,6 @@ Target length: ~3 minutes. Recorded screen + voiceover.
 
 - **Why soft-delete with COALESCE?** The service worker replay creates a tension: the extension doesn't know about deletions made in the dashboard. Hard-coding `deleted_at = null` in the replay would un-delete things. COALESCE preserves whichever side has a non-null deletion.
 
-- **Why Haiku over Sonnet?** Classification is a narrow structured-output task with an 8-class schema and a 220-character prompt. Haiku handles it at one-third the cost. Sonnet adds no measurable accuracy on this task shape.
+- **Why Gemini Nano as the default?** Zero friction — no API key, no account, no cost. It runs entirely in Chrome using Chrome's built-in AI APIs. If the device doesn't support it, the extension falls back to Gemini Cloud if a key is set. Power users can swap to Anthropic Haiku or a local LM Studio model.
+
+- **Why Haiku when using Anthropic?** Classification is a narrow structured-output task with an 8-class schema and a short prompt. Haiku handles it at one-third the cost of Sonnet with no measurable accuracy difference on this task shape.
