@@ -16,7 +16,15 @@
     "productName": "Intent Dashboard",
     "files": [
       "dist/**/*",
-      "electron.cjs"
+      "electron.cjs",
+      "preload.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../",
+        "to": "extension",
+        "filter": ["manifest.json", "popup.html", "settings.html", "privacy-policy.html", "icons/**", "src/**"]
+      }
     ],
     "directories": {
       "output": "release"

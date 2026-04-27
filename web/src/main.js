@@ -3,7 +3,7 @@ import { distill, reclassify, loadSettings, saveSettings } from "./llm.js";
 import { exportSingle, exportBulkZip } from "./export.js";
 import {
   buildCard, buildDetailView, buildDistillHTML,
-  buildSettingsPanel, buildNavItem,
+  buildSettingsPanel, buildInstallOverlay, buildNavItem,
 } from "./render.js";
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -14,15 +14,32 @@ let activeTag    = null;
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
-const mainEl       = document.getElementById("main");
-const railNav      = document.getElementById("railNav");
-const settingsBtn  = document.getElementById("settingsBtn");
-const exportAllBtn = document.getElementById("exportAllBtn");
-const errorEl      = document.getElementById("error");
+const mainEl        = document.getElementById("main");
+const railNav       = document.getElementById("railNav");
+const settingsBtn   = document.getElementById("settingsBtn");
+const exportAllBtn  = document.getElementById("exportAllBtn");
+const installExtBtn = document.getElementById("installExtBtn");
+const errorEl       = document.getElementById("error");
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
+  if (window.electronBridge) {
+    installExtBtn.style.display = "";
+    const current = loadSettings();
+    if (!current.supabaseUrl) {
+      const stored = await window.electronBridge.getInitialSettings();
+      if (stored?.supabaseUrl) {
+        saveSettings({ ...current, supabaseUrl: stored.supabaseUrl, supabaseAnonKey: stored.supabaseAnonKey || "" });
+      }
+    }
+    window.electronBridge.onSettingsFromExtension((data) => {
+      const s = loadSettings();
+      saveSettings({ ...s, supabaseUrl: data.supabaseUrl || s.supabaseUrl, supabaseAnonKey: data.supabaseAnonKey || s.supabaseAnonKey });
+      if (!isConfigured()) boot();
+    });
+  }
+
   if (!isConfigured()) {
     mainEl.innerHTML = `
       <div class="empty">
@@ -208,6 +225,11 @@ settingsBtn.addEventListener("click", () => {
     () => panel.remove()
   );
   document.body.appendChild(panel);
+});
+
+installExtBtn.addEventListener("click", () => {
+  const overlay = buildInstallOverlay(() => overlay.remove());
+  document.body.appendChild(overlay);
 });
 
 // ─── Error ────────────────────────────────────────────────────────────────────
