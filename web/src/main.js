@@ -195,10 +195,11 @@ async function runDistillation(capture, distillEl) {
 
     distillEl.innerHTML = buildDistillHTML(bullets);
 
-    patchCapture(capture.id, { distillation: bullets }).catch(() => {});
-
+    capture.distillation = bullets;
     const idx = captures.findIndex(c => c.id === capture.id);
-    if (idx !== -1) captures[idx] = { ...captures[idx], distillation: bullets };
+    if (idx !== -1) captures[idx].distillation = bullets;
+
+    patchCapture(capture.id, { distillation: bullets }).catch(() => {});
   } catch (err) {
     distillEl.innerHTML = `<p class="distill-hint">${err.message.includes("not configured")
       ? "Configure LLM provider in Settings (⚙) to enable distillation."
