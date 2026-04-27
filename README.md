@@ -103,11 +103,42 @@ intent/
 
 ### Companion web app (`/web`)
 
-A Vite + vanilla JS dashboard that reads captures from Supabase. Run locally:
+A Vite + vanilla JS dashboard that reads captures from Supabase. Runs as a local Electron desktop app — no hosting required.
+
+```
+web/
+├── electron.cjs        # Electron main process
+├── vite.config.js
+├── package.json
+└── src/
+    ├── main.js         # App bootstrap, settings, nav
+    ├── supabase.js     # Supabase client (reads credentials from settings)
+    ├── llm.js          # LLM adapter + settings persistence (localStorage)
+    ├── render.js       # Card, detail, settings panel builders
+    ├── export.js       # JSON / Markdown / ZIP export
+    └── style.css
+```
+
+**Run the desktop app:**
 
 ```bash
 cd web
-npx vite
+npm install
+npm run electron       # build + open in a desktop window
+```
+
+**Package an installer:**
+
+```bash
+npm run dist           # outputs to web/release/
+```
+
+On first launch, click ⚙ (Settings) and enter your Supabase URL and anon key under **Sync**.
+
+**Dev server (browser):**
+
+```bash
+npm run dev            # Vite dev server at http://localhost:5173
 ```
 
 ---
